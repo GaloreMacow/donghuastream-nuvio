@@ -33,7 +33,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.0.2');assert.equal(manifest.scrapers.length,1);
+    assert.equal(manifest.version,'1.0.3');assert.equal(manifest.scrapers.length,1);
     const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename)));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
@@ -120,6 +120,22 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
     entry('OK.ru','Unknown','https://cdn.example/a.mp4','mp4'),
     entry('OK.ru','Unknown','https://cdn.example/b.mp4','mp4')
   ]).length,2));
+  check('each server sorts Auto then descending resolutions',()=>{
+    const sorted=p.uniqueQualities([
+      entry('OK.ru','720p','https://cdn.example/720.mp4','mp4'),
+      entry('Rumble','480p','https://rumble.example/480.mp4','mp4'),
+      entry('OK.ru','1080p','https://cdn.example/1080.mp4','mp4'),
+      entry('OK.ru','Auto','https://cdn.example/master.m3u8','hls'),
+      entry('OK.ru','4K','https://cdn.example/4k.mp4','mp4'),
+      entry('Rumble','Auto','https://rumble.example/master.m3u8','hls'),
+      entry('Rumble','1440p','https://rumble.example/1440.mp4','mp4')
+    ]);
+    assert.deepEqual(Array.from(sorted,s=>s.name+'|'+s.quality),[
+      'DonghuaStream | OK.ru|Auto','DonghuaStream | OK.ru|4K',
+      'DonghuaStream | OK.ru|1080p','DonghuaStream | OK.ru|720p',
+      'DonghuaStream | Rumble|Auto','DonghuaStream | Rumble|1440p','DonghuaStream | Rumble|480p'
+    ]);
+  });
   const opts=JSON.stringify({flashvars:{metadata:JSON.stringify({videos:[{name:'full',url:'https://okcdn.example/video.mp4'}]})}}).replace(/"/g,'&quot;');
   let seenRequests=[];
   const integrated=load((u,o)=>{
