@@ -18,7 +18,7 @@ function load(fetch,key='fixture',UrlConstructor=URL){
   }};
   if(key!==null)context.TMDB_API_KEY=key;
   // Test helpers stay private in the distributed provider.
-  const code=source.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams, absolute, decode64, rankCards, chooseEpisode, episodeNumbers, mirrors, master, expand, unpackAssignments, trackList, pageStreams};');
+  const code=source.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams, absolute, decode64, rankCards, chooseEpisode, episodeNumbers, mirrors, master, expand, unpackAssignments, trackList, pageStreams, uniqueQualities};');
   vm.runInNewContext(code,context,{timeout:2000});return context.module.exports;
 }
 const meta={name:'Renegade Immortal',original_name:'仙逆',alternative_titles:{results:[{title:'Xian Ni'}]},seasons:[{season_number:1,episode_count:52},{season_number:2,episode_count:30}]};
@@ -33,7 +33,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.0.1');assert.equal(manifest.scrapers.length,1);
+    assert.equal(manifest.version,'1.0.2');assert.equal(manifest.scrapers.length,1);
     const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename)));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
@@ -84,6 +84,42 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   check('a failed probe retains the player-provided HLS URL',()=>assert.equal(retained.length,1));
   const removed=await load(u=>Promise.resolve(response('',u,404))).expand({...s},{start:Date.now()});
   check('404 playlists are omitted',()=>assert.equal(removed.length,0));
+  function entry(server,quality,url,type,bandwidth=0,subtitles=[]) {
+    return {name:'DonghuaStream | '+server,quality,url,type,_type:type,_bandwidth:bandwidth,subtitles};
+  }
+  const duplicates=p.uniqueQualities([
+    entry('OK.ru','1080p','https://cdn.example/1080.m3u8','hls',4000000),
+    entry('OK.ru','1080p','https://cdn.example/1080.mp4','mp4'),
+    entry('OK.ru','720p','https://cdn.example/720.mp4','mp4'),
+    entry('Rumble','1080p','https://rumble.example/1080.m3u8','hls',3000000),
+    entry('Rumble','1080p','https://rumble.example/better.m3u8','hls',6000000)
+  ]);
+  check('one resolution per server keeps MP4 and highest bitrate HLS',()=>{
+    assert.equal(duplicates.length,3);
+    assert.equal(duplicates[0].url,'https://cdn.example/1080.mp4');
+    assert.equal(duplicates[2].url,'https://rumble.example/better.m3u8');
+    assert(duplicates.every(s=>!('_type' in s)&&!('_bandwidth' in s)));
+  });
+  const autoEntries=p.uniqueQualities([
+    entry('OK.ru','Auto','https://cdn.example/auto.mp4','mp4'),
+    entry('OK.ru','Auto','https://cdn.example/master.m3u8','hls'),
+    entry('Rumble','Auto','https://rumble.example/master.m3u8','hls')
+  ]);
+  check('adaptive Auto remains separate for each server',()=>{
+    assert.equal(autoEntries.length,2);assert.equal(autoEntries[0].url,'https://cdn.example/master.m3u8');
+  });
+  const merged=p.uniqueQualities([
+    entry('OK.ru','4K','https://cdn.example/4k.mp4','mp4',0,[{url:'https://cdn.example/en.vtt',language:'en',headers:{Referer:SITE}}]),
+    entry('OK.ru','2160p','https://cdn.example/2160.m3u8','hls',0,[{url:'https://cdn.example/fr.vtt',language:'fr',headers:{Referer:SITE}}])
+  ]);
+  check('equivalent 4K resolutions merge without losing subtitle headers',()=>{
+    assert.equal(merged.length,1);assert.equal(merged[0].subtitles.length,2);
+    assert(merged[0].subtitles.every(t=>t.headers.Referer===SITE));
+  });
+  check('unknown qualities stay distinct',()=>assert.equal(p.uniqueQualities([
+    entry('OK.ru','Unknown','https://cdn.example/a.mp4','mp4'),
+    entry('OK.ru','Unknown','https://cdn.example/b.mp4','mp4')
+  ]).length,2));
   const opts=JSON.stringify({flashvars:{metadata:JSON.stringify({videos:[{name:'full',url:'https://okcdn.example/video.mp4'}]})}}).replace(/"/g,'&quot;');
   let seenRequests=[];
   const integrated=load((u,o)=>{
