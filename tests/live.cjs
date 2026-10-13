@@ -25,15 +25,15 @@ function curlFetch(url, options = {}) {
     });
   });
 }
-const sandbox = {module:{exports:{}}, console, URL, TMDB_API_KEY:'metadata-fixture-only', fetch:curlFetch,
+const sandbox = {module:{exports:{}}, console, URL, setTimeout, clearTimeout, TMDB_API_KEY:'metadata-fixture-only', fetch:curlFetch,
   require:n=>{if(n==='cheerio-without-node-native')return cheerio;throw Error(n);}};
 vm.runInNewContext(source,sandbox);
 (async()=>{
   const start=Date.now();
-  const streams=await sandbox.module.exports.getStreams('223911','tv',1,162);
+  const streams=await sandbox.module.exports.getStreams('223911','tv',1,Number(process.env.LIVE_EPISODE || 162));
   const summary={elapsedSeconds:Math.round((Date.now()-start)/1000),metadata:'fixture; site and player requests are live',
     streamCount:streams.length,servers:{},requests:records};
-  for(const s of streams){const server=s.name.replace('DonghuaStream | ','').split(' | ')[0];(summary.servers[server]||=[]).push({quality:s.quality,subtitleLanguages:s.subtitles.map(t=>t.language),title:s.title});}
+  for(const s of streams){const server=s.name.split(' | ').slice(0,-1).join(' | ');(summary.servers[server]||=[]).push({quality:s.quality,subtitleLanguages:s.subtitles.map(t=>t.language),title:s.title});}
   console.log(JSON.stringify(summary,null,2));
   if(!streams.length) process.exitCode=1;
 })().catch(e=>{console.error(e.message);process.exitCode=1;});
