@@ -1,8 +1,15 @@
 {
   "name": "donghuastream-nuvio",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "private": true,
   "description": "DonghuaStream provider for plugin-enabled Nuvio builds",
-  "scripts": {"test": "node tests/validate.cjs", "test:live": "node tests/live.cjs"},
-  "devDependencies": {"acorn": "8.15.0", "cheerio": "1.0.0", "quickjs-emscripten": "0.32.0"}
+  "scripts": {
+    "test": "node tests/validate.cjs && node tests/multisite.cjs",
+    "test:live": "node tests/live.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "cheerio": "1.0.0",
+    "quickjs-emscripten": "0.32.0"
+  }
 }

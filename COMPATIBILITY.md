@@ -1,5 +1,7 @@
 # Nuvio compatibility audit
 
+This is the historical **v1.0.1** audit. The **v1.1.0** multi-site expansion passes ES5/QuickJS checks but has not been retested against every native binding or parser quota. See [VALIDATION.md](VALIDATION.md).
+
 DonghuaStream plugin **v1.0.1**, audited **13 October 2026**.
 
 `NuvioMedia/NuvioTV` is the official **Android TV** repository. It is not a single repository for every Nuvio application. Samsung/LG, mobile and desktop implementations have separate repositories.

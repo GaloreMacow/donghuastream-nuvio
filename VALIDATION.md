@@ -1,84 +1,32 @@
-# Validation report
-
-Version: **1.0.5**. Checked on **13 October 2026**.
+# Validation — v1.1.0
 
 ## Automated checks
 
-**53 checks passed** with `tests/validate.cjs`:
+`npm test` runs the original 53 provider checks and 27 multi-site checks (80 total). Coverage includes ES5/QuickJS loading, TMDB/Kitsu inputs, exact episode selection, sequel rejection, all eight captured site layouts, public DongSub episode lookup, player extraction, language variants, duplicate removal, quality ordering, failure isolation, and optional deadlines.
 
-- Manifest validity, unique provider ID, matching versions, and existing file paths.
-- ES5 syntax, allowed runtime dependency, and absence of Node, DOM, timer, or downloaded-script execution requirements in the provider.
-- Invalid inputs and missing TMDB configuration fail cleanly.
-- English/Chinese title matching, movie/TV filtering, local and absolute episode numbering, bracket numbers, and refusal to guess unmatched seasons or specials.
-- All four server selectors, protocol-relative URLs, base64 decoding, and duplicate suppression.
-- Parent-directory and query-only HLS URLs resolved correctly even under Nuvio's limited URL constructors.
-- Stream type and subtitle request headers preserved, and `series`/`show`/`other` TV aliases accepted.
-- HLS resolution parsing, relative variants, and preserving parent masters for external audio/subtitle renditions.
-- External subtitle attachments and ISO language codes; thumbnail tracks excluded.
-- Missing playlists and HTML errors omitted; transient/access failures handled separately.
-- Mocked complete TMDB → site search → episode → public player resolution, with one broken server and three successful resolvers.
-- Provider loading and deterministic helper execution in QuickJS.
+The captured fixtures contain public catalog, episode, and player controls. Video-host responses in automated pipeline tests are mocked; these tests do not prove playback.
 
-Separately, the actual compatibility functions from NuvioTVSmart's `pluginWorker.js` were loaded into QuickJS. A replay of captured site/player responses completed the full `getStreams` path, with the real URL/fetch/cheerio compatibility interfaces and the conservative **four-document parser quota**. This exercised the installed provider script, not a rewrite of its logic.
+## Live checks — 13 October 2026
 
-The updated provider also completed equivalent replays with the actual JavaScript bindings extracted from **NuvioTV release 1.0.0**, **NuvioTV's current dev branch**, and **NuvioMobile's current shared bindings**. NuvioDesktop's checked shared-binding file has the same SHA-256 as NuvioMobile's. Each replay returned 17 source entries across Dailymotion, Rumble and OK.ru from captured responses; replay fixtures differ slightly from the fresh live responses. See `COMPATIBILITY.md` for exact snapshots.
+- A combined Renegade Immortal episode 146 lookup returned **56 options across eight sites** in 51 seconds: DonghuaStream, AnimeXin, Anime4i, Lucifer `.org`, AnimeKhor, Donghua World, DongSub, and H-Donghua.
+- After fixing relay extraction, a separate Lucifer `.in` episode 162 lookup returned **14 options** in 35 seconds.
+- H-Donghua’s direct MP4 returned **HTTP 206**, `video/mp4`, and the requested 1,024-byte range.
+- DongSub’s public WordPress search API found the exact older episode 161.
 
-The replay used mocked network responses. It verifies runtime integration, not live connectivity or TV hardware decoding. Its temporary host adapter is not part of the distributed plugin.
+Live tests use fixture TMDB metadata; site and player requests are real. Results vary by time, region, and host. No physical phone or TV playback was tested.
 
-## Live public-site test
+## Supported players and limits
 
-Test title: **Renegade Immortal (2023), TMDB 225311, S1 E162**.
+Dailymotion, Rumble, OK.ru, All Sub Player, direct media files, and H-Donghua’s public direct-video wrapper are supported. Other embeds (including VK, DTube, Mega, Dood, and several custom players) are skipped. Catalog support does not imply support for every server on that site.
 
-TMDB metadata was supplied as a test fixture. The site search, series page, episode page, public player data, and playlist requests were fetched live. This is not a live authenticated TMDB test.
+Failed hosts are isolated. When runtime timers are available, individual requests have a 14-second limit and the combined lookup returns available results within a 52-second budget. Older runtimes without timers use the application’s own timeout.
 
-The refreshed v1.0.5 live lookup returned **16 source entries across three servers** in approximately 53 seconds. The resolvers for all four observed hosts were exercised; the confirmed dead All Sub Player playlist was omitted. Dailymotion's retained result remains unverified for playback.
+Duplicate quality options are removed within each site/server/language group; exact shared playback links with the same headers and subtitles are merged across sites. Numbered labels preserve Auto-first, descending quality order in Nuvio builds that alphabetically sort stream labels.
 
-| Server | Observed result | Playback evidence / limitation |
-| --- | --- | --- |
-| Rumble | Adaptive master and six variants, including 1530p, 1080p and 720p; 16 external subtitle URLs | Master and 720p child playlist fetched. A media segment returned HTTP 200 and ffprobe confirmed H.264 video plus AAC audio. Full-episode and TV playback were not tested. |
-| OK.ru | Eight direct quality URLs through 4K | Public player metadata parsed. The CDN returned an HTML “Site Unavailable” response here, so actual media playback could not be verified. |
-| Dailymotion | One adaptive source; 10 external subtitle URLs | Public metadata parsed. The playlist probe returned HTTP 403 here, so qualities and playback could not be verified from this environment. The player-provided URL is retained for an in-app test. |
-| All Sub Player | Public source API and 16 subtitle URLs parsed | Its HLS URL returned HTTP 404 and was omitted. A working public playlist on another episode can be returned by this resolver. |
+Continuous TMDB seasons use known episode counts. Explicit site seasons use local episode numbers. Separate Kitsu parts are not universally mapped to absolute episode offsets; unknown mappings are not guessed. Specials and multi-part movies require explicit mappings.
 
-Subtitle attachments were verified structurally. Individual subtitle download/display and the TV's subtitle menu were not tested. Several hosts may include English subtitles in the video rather than exposing a separate English file.
+Nuvio’s generic provider test may use a western title absent from these catalogs and return no streams. Test with an available donghua episode instead.
 
-Source entries are ordered by server, with Auto first and explicit resolutions descending within each server. Same-resolution HLS variants include their bitrate in the title.
+## Historical compatibility audit
 
-## Still requires your Nuvio TV
-
-1. Upload the files, add the raw manifest URL under Plugins, and enable DonghuaStream.
-2. Open Renegade Immortal S1E162 and confirm that sources appear.
-3. Play Rumble; select another resolution and an exposed subtitle language.
-4. Test OK.ru and Dailymotion from your network. Refresh sources before testing because some URLs expire or depend on IP.
-5. Check an older episode and a different series with several seasons.
-
-No physical Samsung/LG/Android TV was connected to this environment. **Seamless playback on the user's TV is not yet confirmed.**
-
-## Framework reference
-
-The manifest follows the working FrameXTV package's `scrapers` repository shape. The entry point exports `getStreams(tmdbId, mediaType, season, episode)` and returns native stream objects.
-
-The same manifest fields, module entry point, TMDB binding, fetch interface, permitted HTML-parser dependency and subtitle fields are accepted by the checked Android TV, mobile/desktop and Samsung/LG contracts. The ZIP includes a compatibility table; this is a runtime/API compatibility check rather than physical-device certification.
-
-- [NuvioTVSmart runtime implementation](https://github.com/NuvioMedia/NuvioTVSmart/blob/main/js/core/player/pluginWorker.js)
-- [Nuvio provider API documentation](https://github.com/yoruix/nuvio-providers/blob/template/DOCUMENTATION.md)
-
-## Duplicate resolution fix (v1.0.5)
-
-Four regression checks cover one fixed resolution per server, MP4 preference, highest bitrate HLS selection, adaptive Auto retention, equivalent 4K labels, subtitle header preservation and distinct unknown qualities.
-
-## Mobile display-order regression
-
-The app sorts plugin results by sourceName, streamLabel, and streamSubtitle after provider execution. New tests replay this alphabetical ordering against the numbered labels, preserve full 1080p labels and playback data, and normalize cropped 640-wide HLS variants to 360p before deduplication. Provider-only ordering tests did not cover this app-side sorting in prior versions.
-
-## Kitsu and combined title matching
-
-The provider accepts explicit Kitsu anime IDs, optional Kitsu episode suffixes, and the anime media type. It fetches canonical, abbreviated and localized Kitsu titles without requiring a TMDB key. Combined title aliases such as Douluo Dalu (Soul Land) match either complete title. Episode conflicts and unlisted episodes return no streams instead of selecting another episode.
-
-On 13 October 2026, the Soul Land site listing contained episodes 262, 263 and 264 only; a site search for Soul Land Episode 1 returned no results. Earlier episodes were not found in this check.
-
-Soul Land S1E264 live lookup reached the correct series and episode page using fixture TMDB metadata with the combined title, then queried Dailymotion and All Sub Player. Neither host supplied usable sources in this environment; the result was zero streams. This confirms title/episode lookup, not successful playback.
-
-## v1.0.6 manifest compatibility recovery
-
-Restored the plain providers/donghuastream.js filename and movie/tv manifest types used by the original working package. Kitsu series IDs still work because the Kitsu catalog exposes series items, which Nuvio normalizes to TV. The JavaScript anime alias remains available. This removes recent manifest differences as possible loader compatibility factors; an on-device load failure was not reproduced in the container.
+[COMPATIBILITY.md](COMPATIBILITY.md) records the earlier v1.0.1 application-binding audit. The expanded v1.1.0 provider passes ES5 and QuickJS checks, but has not been replayed against every native application binding or its HTML-parser quotas. Device verification remains necessary.

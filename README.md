@@ -1,24 +1,23 @@
 # DonghuaStream for Nuvio
 
-A plugin that finds DonghuaStream video sources for movies and episodes selected in Nuvio. It works with Nuvio builds that support plugins and does not add a separate catalog.
+A plugin that searches multiple donghua sites for movies and episodes selected in Nuvio.
 
-## Key features
+## Features
 
-- Resolves supported video servers: Dailymotion, Rumble, OK.ru, and All Sub Player.
-- Shows available quality options, with one entry per resolution for each server.
-- Uses numbered labels to keep Auto first, followed by resolutions from highest to lowest.
-- Includes available external subtitles and preserves adaptive HLS audio and subtitle tracks.
-- Matches titles and episodes using TMDB metadata or Kitsu anime IDs, including English and Chinese title aliases.
-- Handles server failures independently, so other available sources can still appear.
+- Searches DonghuaStream plus AnimeXin, Anime4i, Lucifer Donghua `.in` and `.org`, AnimeKhor, Donghua World, DongSub, and H-Donghua together.
+- Matches titles and episodes using TMDB or Kitsu metadata.
+- Labels streams by site and server, keeping available language versions separate.
+- Removes duplicate qualities and sorts Auto first, then resolutions from highest to lowest.
+- Includes available subtitles and returns other sources when a site fails.
 
 ## Installation
 
-Add this repository URL in Nuvio's **Plugins** settings, then enable **DonghuaStream**:
+Add this URL in Nuvio’s **Plugins** settings and enable **DonghuaStream**:
 
 ```text
 https://raw.githubusercontent.com/GaloreMacow/donghuastream-nuvio/main/manifest.json
 ```
 
-After an update, refresh the repository and reload the episode's sources.
+Refresh the repository after updates, then reload the episode’s sources. Requires a plugin-enabled Nuvio build.
 
-Episode availability depends on the DonghuaStream listing; a title can exist there without all its episodes. Quality, audio, and subtitles depend on the video host. See [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) for technical details and testing limitations.
+Availability depends on the sites and supported video hosts. Some players and season mappings are unsupported. See [VALIDATION.md](VALIDATION.md) for testing details.
