@@ -364,7 +364,10 @@
       data.variants.sort(function (a, b) { return b.bandwidth - a.bandwidth; }).forEach(function (v) {
         if (data.audioGroups[v.audio] || data.subtitleGroups[v.subs]) return;
         var child = stream(v.url, s.name.replace('DonghuaStream | ', ''), v.quality || 'Unknown', s.subtitles, s.headers.Referer, 'hls');
-        if (child && v.bandwidth) child.title += ' | ' + (v.bandwidth / 1000000).toFixed(1) + ' Mbps';
+        if (child && v.bandwidth) {
+          child._bandwidth = v.bandwidth;
+          child.title += ' | ' + (v.bandwidth / 1000000).toFixed(1) + ' Mbps';
+        }
         out.push(child);
       });
       return out;
@@ -399,14 +402,42 @@
       var $ = cheerio.load(r.body), title = $('h1').text();
       if (/\b(?:preview|trailer)\b/i.test(title)) return [];
       return Promise.all(mirrors(r.body, r.url, $).slice(0, 8).map(function (m) { return resolveMirror(m, ctx); })).then(function (groups) {
-        var out = [], seen = {};
-        groups.forEach(function (g) { g.forEach(function (s) {
-          // Keep the same URL from different servers only once; its own subtitles stay attached.
-          if (s && !seen[s.url]) { seen[s.url] = true; delete s._type; out.push(s); }
-        }); });
-        return out;
+        var out = [];
+        groups.forEach(function (g) { out = out.concat(g); });
+        return uniqueQualities(out);
       });
     });
+  }
+  function uniqueQualities(sources) {
+    var out = [], positions = {};
+    function formatRank(s) {
+      var type = s._type || s.type;
+      if (/^auto$/i.test(s.quality) && (type === 'hls' || /\.m3u8(?:[?#]|$)/i.test(s.url))) return 4;
+      if (type === 'mp4' || /\.mp4(?:[?#]|$)/i.test(s.url)) return 3;
+      if (type === 'hls' || /\.m3u8(?:[?#]|$)/i.test(s.url)) return 2;
+      return 1;
+    }
+    sources.forEach(function (s) {
+      if (!s) return;
+      var q = String(s.quality || '').toLowerCase(), number = q.match(/^(\d+)p$/);
+      if (q === '4k') q = '2160p';
+      // Unknown resolutions stay separate; do not collapse unrelated unknown sources.
+      var key = s.name + '|' + (number || q === '2160p' || q === 'auto' ? q : s.url);
+      if (!Object.prototype.hasOwnProperty.call(positions, key)) {
+        positions[key] = out.length; out.push(s); return;
+      }
+      var index = positions[key], previous = out[index], selected = previous;
+      if (formatRank(s) > formatRank(previous) || (formatRank(s) === formatRank(previous) &&
+          Number(s._bandwidth || 0) > Number(previous._bandwidth || 0))) selected = s;
+      var subs = [], seenSubs = {};
+      (selected.subtitles || []).concat((selected === s ? previous : s).subtitles || []).forEach(function (t) {
+        var id = t.url + '|' + t.language;
+        if (!seenSubs[id]) { seenSubs[id] = true; subs.push(t); }
+      });
+      selected.subtitles = subs; out[index] = selected;
+    });
+    out.forEach(function (s) { delete s._type; delete s._bandwidth; });
+    return out;
   }
   function getStreams(tmdbId, mediaType, season, episode) {
     var id = String(tmdbId == null ? '' : tmdbId).replace(/^tmdb:/, ''), type = String(mediaType || '').toLowerCase();
