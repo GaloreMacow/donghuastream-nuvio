@@ -1,10 +1,10 @@
 # Validation report
 
-Version: **1.0.4**. Checked on **13 October 2026**.
+Version: **1.0.5**. Checked on **13 October 2026**.
 
 ## Automated checks
 
-**47 checks passed** with `tests/validate.cjs`:
+**53 checks passed** with `tests/validate.cjs`:
 
 - Manifest validity, unique provider ID, matching versions, and existing file paths.
 - ES5 syntax, allowed runtime dependency, and absence of Node, DOM, timer, or downloaded-script execution requirements in the provider.
@@ -27,15 +27,15 @@ The replay used mocked network responses. It verifies runtime integration, not l
 
 ## Live public-site test
 
-Test title: **Renegade Immortal (2023), TMDB 224711, S1 E162**.
+Test title: **Renegade Immortal (2023), TMDB 225311, S1 E162**.
 
 TMDB metadata was supplied as a test fixture. The site search, series page, episode page, public player data, and playlist requests were fetched live. This is not a live authenticated TMDB test.
 
-The refreshed v1.0.4 live lookup returned **16 source entries across three servers** in approximately 47 seconds. The resolvers for all four observed hosts were exercised; the confirmed dead All Sub Player playlist was omitted. Dailymotion's retained result remains unverified for playback.
+The refreshed v1.0.5 live lookup returned **16 source entries across three servers** in approximately 53 seconds. The resolvers for all four observed hosts were exercised; the confirmed dead All Sub Player playlist was omitted. Dailymotion's retained result remains unverified for playback.
 
 | Server | Observed result | Playback evidence / limitation |
 | --- | --- | --- |
-| Rumble | Adaptive master and six variants, including 1470p, 1080p and 720p; 16 external subtitle URLs | Master and 720p child playlist fetched. A media segment returned HTTP 200 and ffprobe confirmed H.264 video plus AAC audio. Full-episode and TV playback were not tested. |
+| Rumble | Adaptive master and six variants, including 1530p, 1080p and 720p; 16 external subtitle URLs | Master and 720p child playlist fetched. A media segment returned HTTP 200 and ffprobe confirmed H.264 video plus AAC audio. Full-episode and TV playback were not tested. |
 | OK.ru | Eight direct quality URLs through 4K | Public player metadata parsed. The CDN returned an HTML “Site Unavailable” response here, so actual media playback could not be verified. |
 | Dailymotion | One adaptive source; 10 external subtitle URLs | Public metadata parsed. The playlist probe returned HTTP 403 here, so qualities and playback could not be verified from this environment. The player-provided URL is retained for an in-app test. |
 | All Sub Player | Public source API and 16 subtitle URLs parsed | Its HLS URL returned HTTP 404 and was omitted. A working public playlist on another episode can be returned by this resolver. |
@@ -63,10 +63,18 @@ The same manifest fields, module entry point, TMDB binding, fetch interface, per
 - [NuvioTVSmart runtime implementation](https://github.com/NuvioMedia/NuvioTVSmart/blob/main/js/core/player/pluginWorker.js)
 - [Nuvio provider API documentation](https://github.com/yoruix/nuvio-providers/blob/template/DOCUMENTATION.md)
 
-## Duplicate resolution fix (v1.0.4)
+## Duplicate resolution fix (v1.0.5)
 
 Four regression checks cover one fixed resolution per server, MP4 preference, highest bitrate HLS selection, adaptive Auto retention, equivalent 4K labels, subtitle header preservation and distinct unknown qualities.
 
 ## Mobile display-order regression
 
 The app sorts plugin results by sourceName, streamLabel, and streamSubtitle after provider execution. New tests replay this alphabetical ordering against the numbered labels, preserve full 1080p labels and playback data, and normalize cropped 640-wide HLS variants to 360p before deduplication. Provider-only ordering tests did not cover this app-side sorting in prior versions.
+
+## Kitsu and combined title matching
+
+The provider accepts explicit Kitsu anime IDs, optional Kitsu episode suffixes, and the anime media type. It fetches canonical, abbreviated and localized Kitsu titles without requiring a TMDB key. Combined title aliases such as Douluo Dalu (Soul Land) match either complete title. Episode conflicts and unlisted episodes return no streams instead of selecting another episode.
+
+On 13 October 2026, the Soul Land site listing contained episodes 262, 263 and 264 only; a site search for Soul Land Episode 1 returned no results. Earlier episodes were not found in this check.
+
+Soul Land S1E264 live lookup reached the correct series and episode page using fixture TMDB metadata with the combined title, then queried Dailymotion and All Sub Player. Neither host supplied usable sources in this environment; the result was zero streams. This confirms title/episode lookup, not successful playback.
