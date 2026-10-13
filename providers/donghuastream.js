@@ -90,12 +90,28 @@
     var list = [meta.title || meta.name, meta.original_title || meta.original_name];
     var alternatives = meta.alternative_titles || {};
     (alternatives.titles || alternatives.results || []).forEach(function (x) { list.push(x.title); });
+    list.slice().forEach(function (title) {
+      var combined = String(title || '').match(/^(.+?)\s*\(([^()]+)\)\s*$/);
+      if (combined && !/^(?:\d{4}|season\s*\d+|part\s*\d+)$/i.test(combined[2].trim())) {
+        list.push(combined[1].trim()); list.push(combined[2].trim());
+      }
+    });
     var seen = {};
     return list.filter(function (x) {
       var key = normalized(x); if (!key || seen[key]) return false; seen[key] = true; return true;
     });
   }
   function metadata(id, type, ctx) {
+    var kitsu = String(id).match(/^kitsu:([1-9]\d*)$/i);
+    if (kitsu) return json('https://kitsu.io/api/edge/anime/' + kitsu[1], '', ctx).then(function (result) {
+      var item = result && result.data, attrs = item && item.attributes;
+      if (!attrs || String(item.id) !== kitsu[1]) throw new Error('Kitsu metadata unavailable');
+      var names = [attrs.canonicalTitle].concat(attrs.abbreviatedTitles || []);
+      Object.keys(attrs.titles || {}).forEach(function (language) { names.push(attrs.titles[language]); });
+      return { name: attrs.canonicalTitle, original_name: (attrs.titles || {}).zh_cn || (attrs.titles || {}).ja_jp,
+        alternative_titles: { results: names.map(function (name) { return { title: name }; }) },
+        seasons: [{ season_number: 1, episode_count: Number(attrs.episodeCount || 0) }] };
+    });
     var key = typeof TMDB_API_KEY !== 'undefined' ? String(TMDB_API_KEY || '') : '';
     if (!key) return Promise.reject(new Error('TMDB key unavailable: configure TMDB in Nuvio'));
     return json('https://api.themoviedb.org/3/' + type + '/' + id + '?api_key=' +
@@ -460,9 +476,17 @@
     return sources;
   }
   function getStreams(tmdbId, mediaType, season, episode) {
-    var id = String(tmdbId == null ? '' : tmdbId).replace(/^tmdb:/, ''), type = String(mediaType || '').toLowerCase();
-    if (type === 'series' || type === 'show' || type === 'other') type = 'tv';
-    if (!/^[1-9]\d*$/.test(id) || (type !== 'movie' && type !== 'tv')) return Promise.resolve([]);
+    var id = String(tmdbId == null ? '' : tmdbId).trim().replace(/^tmdb[:/]/i, ''), type = String(mediaType || '').toLowerCase();
+    if (type === 'series' || type === 'show' || type === 'other' || type === 'anime') type = 'tv';
+    var kitsu = id.match(/^(kitsu:[1-9]\d*)(?::([1-9]\d*))?$/i);
+    if (kitsu) {
+      id = kitsu[1].toLowerCase();
+      if (kitsu[2] && (episode == null || Number(episode) === Number(kitsu[2]))) episode = Number(kitsu[2]);
+      else if (kitsu[2]) return Promise.resolve([]);
+      if (season == null) season = 1;
+    }
+    if ((!/^[1-9]\d*$/.test(id) && !/^kitsu:[1-9]\d*$/.test(id)) ||
+        (type !== 'movie' && type !== 'tv')) return Promise.resolve([]);
     if (type === 'tv' && (!/^\d+$/.test(String(season)) || !/^[1-9]\d*$/.test(String(episode)))) return Promise.resolve([]);
     var ctx = { start: Date.now() }; season = Number(season); episode = Number(episode);
     return metadata(id, type, ctx).then(function (meta) {
