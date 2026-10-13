@@ -1,12 +1,13 @@
 # DonghuaStream for Nuvio
 
-A Nuvio **plugin repository** for donghuastream.org, version **1.0.2**. It searches for the title selected in Nuvio and resolves its available public video servers into native playback URLs. Install under **Plugins**, using the same repository format as FrameXTV.
+A Nuvio **plugin repository** for donghuastream.org, version **1.0.3**. It searches for the title selected in Nuvio and resolves its available public video servers into native playback URLs. Install under **Plugins**, using the same repository format as FrameXTV.
 
 The provider contract has been compared with Nuvio Android TV, NuvioMobile, NuvioDesktop and NuvioTVSmart. Read `COMPATIBILITY.md` for the checked versions, runtime replay results and build restrictions. Use a **plugin-enabled full build**: Android Play Store and iOS App Store variants disable this feature in their source code.
 
 ## Features
 
 - Dailymotion, Rumble, All Sub Player (Streamplay), and OK.ru resolvers.
+- Streams grouped by server, with Auto first and fixed resolutions ordered from highest to lowest.
 - One source entry per available resolution for each server, plus adaptive HLS. Duplicate MP4/HLS resolutions are consolidated; MP4 is preferred for fixed resolutions and the highest advertised bitrate is retained among HLS variants.
 - External subtitle files attached to the source that supplies them, with language names.
 - English/Chinese title and alternative-title matching through TMDB.
@@ -36,7 +37,7 @@ Qualities come from host metadata or HLS resolution fields. Cropped cinema frame
 
 ## Validation
 
-Read `VALIDATION.md` and `COMPATIBILITY.md` for the 43 automated checks, framework comparisons and live-host limitations observed during development.
+Read `VALIDATION.md` and `COMPATIBILITY.md` for the 44 automated checks, framework comparisons and live-host limitations observed during development.
 
 The provider itself needs no npm installation. Developers can run:
 
