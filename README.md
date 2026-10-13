@@ -1,13 +1,13 @@
 # DonghuaStream for Nuvio
 
-A Nuvio **plugin repository** for donghuastream.org, version **1.0.3**. It searches for the title selected in Nuvio and resolves its available public video servers into native playback URLs. Install under **Plugins**, using the same repository format as FrameXTV.
+A Nuvio **plugin repository** for donghuastream.org, version **1.0.4**. It searches for the title selected in Nuvio and resolves its available public video servers into native playback URLs. Install under **Plugins**, using the same repository format as FrameXTV.
 
 The provider contract has been compared with Nuvio Android TV, NuvioMobile, NuvioDesktop and NuvioTVSmart. Read `COMPATIBILITY.md` for the checked versions, runtime replay results and build restrictions. Use a **plugin-enabled full build**: Android Play Store and iOS App Store variants disable this feature in their source code.
 
 ## Features
 
 - Dailymotion, Rumble, All Sub Player (Streamplay), and OK.ru resolvers.
-- Streams grouped by server, with Auto first and fixed resolutions ordered from highest to lowest.
+- Streams grouped by server, with numbered quality labels that preserve Auto-first, highest-to-lowest ordering when Nuvio Mobile/Desktop alphabetically re-sort plugin results.
 - One source entry per available resolution for each server, plus adaptive HLS. Duplicate MP4/HLS resolutions are consolidated; MP4 is preferred for fixed resolutions and the highest advertised bitrate is retained among HLS variants.
 - External subtitle files attached to the source that supplies them, with language names.
 - English/Chinese title and alternative-title matching through TMDB.
@@ -37,7 +37,7 @@ Qualities come from host metadata or HLS resolution fields. Cropped cinema frame
 
 ## Validation
 
-Read `VALIDATION.md` and `COMPATIBILITY.md` for the 44 automated checks, framework comparisons and live-host limitations observed during development.
+Read `VALIDATION.md` and `COMPATIBILITY.md` for the 47 automated checks, framework comparisons and live-host limitations observed during development.
 
 The provider itself needs no npm installation. Developers can run:
 
@@ -73,3 +73,7 @@ tests/live.cjs
 .github/workflows/validate.yml
 ```
 
+
+## Updating the plugin
+
+Refresh this repository in Plugins settings and confirm provider version **1.0.4**. Reload the episode sources with the circular-arrow button; the app can cache results separately from provider code. New source labels include **01 - Auto**, then numbered descending resolutions. The manifest versions the provider download URL to refresh stale HTTP copies. Actual 108p streams are not relabeled as 1080p; low-resolution HLS tiers are normalized by width.

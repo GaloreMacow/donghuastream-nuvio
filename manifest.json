@@ -1,15 +1,15 @@
 {
   "name": "DonghuaStream for Nuvio",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Donghua streams with individual servers, available qualities and subtitles.",
   "author": "GaloreMacow",
   "scrapers": [
     {
       "id": "donghuastream",
       "name": "DonghuaStream",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "description": "Chinese animation from DonghuaStream with Dailymotion, Rumble, All Sub Player and OK.ru resolution.",
-      "filename": "providers/donghuastream.js",
+      "filename": "providers/donghuastream.js?v=1.0.4",
       "supportedTypes": ["movie", "tv"],
       "enabled": true,
       "contentLanguage": ["zh"],
