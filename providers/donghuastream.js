@@ -2,6 +2,18 @@
 (function () {
   'use strict';
   var SITE = 'https://donghuastream.org';
+  var SITES = [
+    { name: 'DonghuaStream', url: SITE },
+    { name: 'AnimeXin', url: 'https://animexin.dev' },
+    { name: 'Anime4i', url: 'https://anime4i.com' },
+    { name: 'Lucifer Donghua .in', url: 'https://luciferdonghua.in' },
+    { name: 'Lucifer Donghua .org', url: 'https://luciferdonghua.org' },
+    { name: 'AnimeKhor', url: 'https://animekhor.org' },
+    { name: 'Donghua World', url: 'https://donghuaworld.com' },
+    { name: 'DongSub', url: 'https://dongsub.org', layout: 'dongsub' },
+    { name: 'H-Donghua', url: 'https://h-donghua.com', layout: 'hd' }
+  ];
+  function siteURL(ctx) { return ctx && ctx.site ? ctx.site.url : SITE; }
   var UA = 'Mozilla/5.0';
   var cheerio = require('cheerio-without-node-native');
 
@@ -44,7 +56,15 @@
       return /^https?:$/.test(url.protocol) ? url.href : '';
     } catch (_) { return ''; }
   }
-  function sameSite(url) { return /^https:\/\/donghuastream\.org\//i.test(url); }
+  function sameSite(url, site) { return url.indexOf((site || SITE) + '/') === 0; }
+  function bounded(work, milliseconds, fallback) {
+    // Timers are optional: older TV runtimes can still run the same provider.
+    if (typeof setTimeout !== 'function' || typeof clearTimeout !== 'function') return work;
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { try { resolve(fallback()); } catch (error) { reject(error); } }, milliseconds);
+      work.then(function (value) { clearTimeout(timer); resolve(value); }, function (error) { clearTimeout(timer); reject(error); });
+    });
+  }
   function request(url, ref, ctx, options) {
     if (ctx && Date.now() - ctx.start > 48000) return Promise.reject(new Error('Search budget reached'));
     var opts = options || {};
@@ -52,10 +72,11 @@
     if (ref) headers.Referer = ref;
     Object.keys(opts.headers || {}).forEach(function (k) { headers[k] = opts.headers[k]; });
     opts.headers = headers;
-    return Promise.resolve().then(function () { return fetch(url, opts); }).then(function (res) {
+    var work = Promise.resolve().then(function () { return fetch(url, opts); }).then(function (res) {
       if (!res.ok) { var error = new Error('HTTP ' + res.status); error.status = res.status; throw error; }
       return res.text().then(function (body) { return { body: body, url: res.url || url }; });
     });
+    return bounded(work, 14000, function () { throw new Error('Request timeout'); });
   }
   function json(url, ref, ctx, options) {
     return request(url, ref, ctx, options).then(function (r) { return JSON.parse(r.body); });
@@ -83,8 +104,22 @@
     if (!a || !b) return 0;
     if (a === b) return 1;
     var aa = a.split(' '), bb = b.split(' '), shared = 0;
+    var numeral = /^(?:\d+|ii|iii|iv|vi|vii|viii|ix)$/;
+    if (aa.filter(function (w) { return numeral.test(w); }).join(' ') !== bb.filter(function (w) { return numeral.test(w); }).join(' ')) return 0;
     aa.forEach(function (w) { if (bb.indexOf(w) >= 0) shared++; });
     return 2 * shared / (aa.length + bb.length);
+  }
+  function titleParts(title) {
+    title = String(title || '').replace(/\s*[([](?:19|20)\d{2}[)\]]\s*$/, '').trim();
+    var m = title.match(/^(.+?)\s*[([]([^()[\]]+)[)\]]\s*$/);
+    // Parenthesized sequel/season numbers are meaningful, never discard them.
+    if (m && !/\d|\b(?:season|part|movie|special)\b/i.test(m[2])) return [title, m[1], m[2]];
+    return [title];
+  }
+  function titleScore(names, title) {
+    var score = 0;
+    names.forEach(function (n) { titleParts(title).forEach(function (p) { score = Math.max(score, similarity(n, p)); }); });
+    return score;
   }
   function aliases(meta) {
     var list = [meta.title || meta.name, meta.original_title || meta.original_name];
@@ -117,17 +152,18 @@
     return json('https://api.themoviedb.org/3/' + type + '/' + id + '?api_key=' +
       encodeURIComponent(key) + '&language=en-US&append_to_response=alternative_titles', '', ctx);
   }
-  function rankCards(html, meta, season, type) {
-    if (!/\bbsx\b/.test(html)) return [];
+  function rankCards(html, meta, season, type, site) {
+    site = site || SITES[0];
     var $ = cheerio.load(html), names = aliases(meta), result = [], seen = {};
-    $('.bsx a[href]').each(function (_, el) {
-      var link = $(el), url = absolute(link.attr('href'));
-      if (!sameSite(url) || url.indexOf('/anime/') < 0 || seen[url]) return;
-      var title = link.attr('title') || link.find('h2').text();
+    $('.bsx a[href], .aamla-card__link, .hd-card-link').each(function (_, el) {
+      var link = $(el), url = absolute(link.attr('href'), site.url + '/');
+      if (!sameSite(url, site.url) || seen[url]) return;
+      var title = link.attr('title') || link.attr('aria-label') || link.find('h2, .hd-card-title, .aamla-card__title').first().text();
+      if (url.indexOf('/anime/') >= 0) title = title.replace(/\s+Episode\s+\d+\b.*$/i, '');
+      if (/\bepisode\s*\d+/i.test(title)) return;
       var movie = /\b(?:movie|special)\b/i.test(link.find('.typez').text()) || /\bmovie\b/i.test(title);
       if (type === 'tv' && movie) return;
-      var score = 0;
-      names.forEach(function (n) { score = Math.max(score, similarity(n, title)); });
+      var score = titleScore(names, title);
       if (score < 0.78) return;
       var ss = siteSeason(title);
       seen[url] = true;
@@ -141,8 +177,8 @@
     function next() {
       if (index >= names.length) return Promise.resolve(cards);
       var query = names[index++];
-      return request(SITE + '/?s=' + encodeURIComponent(query), SITE + '/', ctx).then(function (r) {
-        cards = rankCards(r.body, meta, season, type);
+      return request(siteURL(ctx) + '/?s=' + encodeURIComponent(query), siteURL(ctx) + '/', ctx).then(function (r) {
+        cards = rankCards(r.body, meta, season, type, ctx.site);
         return cards.length ? cards : next();
       }).catch(function () { return next(); });
     }
@@ -163,16 +199,19 @@
   }
   function chooseEpisode(html, card, meta, type, season, episode) {
     var $ = cheerio.load(html), names = aliases(meta);
-    var pageTitle = $('.entry-title').text() || $('h1').text();
+    var pageTitle = $('.entry-title').first().text() || $('h1').first().text();
     var alt = $('.alter').text().split(/[,，]/);
     var pageNames = [pageTitle].concat(alt), match = 0;
-    names.forEach(function (n) { pageNames.forEach(function (p) { match = Math.max(match, similarity(n, p)); }); });
+    pageNames.forEach(function (p) { match = Math.max(match, titleScore(names, p)); });
     if (match < 0.78) return '';
     var abs = absoluteEpisode(meta, season, episode), picks = [];
-    $('.eplister li a[href]').each(function (_, el) {
+    $('.eplister li a[href], .hd-ep-btn[href], a.watch-now[href]').each(function (_, el) {
       var a = $(el), url = absolute(a.attr('href')), label = a.find('.epl-num').text();
       var title = a.find('.epl-title').text();
-      if (!sameSite(url)) return;
+      var origin = (card.url || SITE).match(/^https?:\/\/[^/]+/)[0];
+      url = absolute(a.attr('href'), card.url || SITE + '/');
+      if (!sameSite(url, origin)) return;
+      if (!label) label = a.attr('data-ep-num') || '';
       if (type === 'movie') {
         if (/\b(?:trailer|preview|pv)\b/i.test(title + ' ' + label)) return;
         picks.push({ url: url, score: 1 }); return;
@@ -180,7 +219,7 @@
       if (season === 0) return; // Specials need an explicit mapping, never substitute a normal episode.
       var n = episodeNumbers(label);
       if (!n) {
-        var titleNum = title.match(/\bepisode\s+(\d+)/i);
+        var titleNum = (title || url).match(/\bepisode[\s-]+(\d+)/i);
         if (titleNum) n = { local: Number(titleNum[1]), absolute: null };
       }
       if (!n) return;
@@ -201,8 +240,20 @@
     function next() {
       if (index >= Math.min(cards.length, 5)) return Promise.resolve('');
       var card = cards[index++];
-      return request(card.url, SITE + '/', ctx).then(function (r) {
+      return request(card.url, siteURL(ctx) + '/', ctx).then(function (r) {
         var page = chooseEpisode(r.body, card, meta, type, season, episode);
+        if (!page && ctx.site && ctx.site.layout === 'dongsub' && type === 'tv') {
+          var target = card.siteSeason === season ? episode : absoluteEpisode(meta, season, episode);
+          if (target === null || season === 0) return next();
+          var query = titleParts(card.title)[1] || card.title;
+          return json(siteURL(ctx) + '/wp-json/wp/v2/search?per_page=30&search=' + encodeURIComponent(query + ' Episode ' + target), card.url, ctx).then(function (items) {
+            var found = (Array.isArray(items) ? items : []).filter(function (item) {
+              var m = String(item.title || '').match(/^(.+?)\s+Episode\s+(\d+)\b/i);
+              return m && Number(m[2]) === target && titleScore(aliases(meta), m[1]) >= 0.78 && sameSite(item.url || '', siteURL(ctx));
+            });
+            return found.length ? found[0].url : next();
+          });
+        }
         return page || next();
       }).catch(function () { return next(); });
     }
@@ -210,20 +261,34 @@
   }
   function mirrors(html, page, parsed) {
     var $ = parsed || cheerio.load(html), result = [], seen = {};
-    $('select.mirror option[value]').each(function (_, el) {
-      var a = $(el), raw = a.attr('value');
+    $('select.mirror option[value], .server-item [data-src], .server-item [data-hash], .hd-server-btn[data-url]').each(function (_, el) {
+      var a = $(el), raw = a.attr('value') || a.attr('data-src') || a.attr('data-hash') || a.attr('data-url');
       if (!raw) return;
       var decoded = /^https?:|^\/\//i.test(raw) ? raw : decode64(raw);
       var match = decoded.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
       var url = absolute(match ? match[1] : decoded, page);
       if (!url || seen[url]) return;
-      seen[url] = true; result.push({ url: url, label: a.text().trim() || 'Server' });
+      seen[url] = true; result.push({ url: url, label: a.attr('data-name') || a.text().trim() || 'Server' });
     });
-    if (!result.length) $('video source[src], video[src]').each(function (_, el) {
+    $('#pembed iframe[src], .player-embed iframe[src], video source[src], video[src]').each(function (_, el) {
       var url = absolute($(el).attr('src'), page);
-      if (url) result.push({ url: url, label: 'Direct' });
+      if (url && !seen[url]) { seen[url] = true; result.push({ url: url, label: 'Direct' }); }
     });
     return result;
+  }
+  function supportedMirror(m, ctx) {
+    var host = new URL(m.url).hostname.toLowerCase();
+    return /(?:^|\.)(?:dailymotion\.com|rumble\.com|ok\.ru)$/.test(host) ||
+      host === 'play.streamplay.co.in' || host === 'dhdpalyer.blogspot.com' ||
+      /\.(?:m3u8|mp4|mkv|webm)(?:[?#]|$)/i.test(m.url) ||
+      (sameSite(m.url, siteURL(ctx)) && /\/v\/\d+\/?$/.test(m.url));
+  }
+  function mirrorVariant(label) {
+    var languages = [], soft = /\b(?:soft|all\s*sub|multi)\b/i.test(label);
+    if (/eng(?:lish)?/i.test(label)) languages.push('English');
+    if (/indo(?:nesian)?/i.test(label)) languages.push('Indonesian');
+    if (soft) return 'Soft subtitles';
+    return languages.join(' + ');
   }
   function subtitle(url, language, label, base) {
     url = absolute(url, base);
@@ -287,7 +352,7 @@
     });
   }
   function okru(m, ctx) {
-    return request(m.url, SITE + '/', ctx).then(function (r) {
+    return request(m.url, siteURL(ctx) + '/', ctx).then(function (r) {
       var $ = cheerio.load(r.body), out = [];
       $('[data-options]').each(function (_, el) {
         try {
@@ -322,13 +387,13 @@
     return output;
   }
   function streamplay(m, ctx) {
-    return request(m.url, SITE + '/', ctx).then(function (r) {
+    return request(m.url, siteURL(ctx) + '/', ctx).then(function (r) {
       var text = unpackAssignments(r.body);
       var token = text.match(/window\.kaken\s*=\s*["']([^"']+)["']/);
       if (!token) return [];
       // Public player endpoint uses the token exactly as supplied by its embed page.
       var api = absolute('/api/', m.url);
-      return json(api, m.url, ctx, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'X-Alt-Referer': SITE + '/' }, body: token[1] }).then(function (data) {
+      return json(api, m.url, ctx, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'X-Alt-Referer': siteURL(ctx) + '/' }, body: token[1] }).then(function (data) {
         if (!Array.isArray(data.sources)) { log('All Sub Player returned no public sources'); return []; }
         var subs = trackList(data.tracks, m.url);
         return data.sources.map(function (s) {
@@ -395,12 +460,30 @@
     });
   }
   function resolveMirror(m, ctx) {
+    if (sameSite(m.url, siteURL(ctx)) && /\/v\/\d+\/?$/.test(m.url)) {
+      return request(m.url, siteURL(ctx) + '/', ctx).then(function (r) {
+        return Promise.all(mirrors(r.body, r.url).filter(function (child) { return !sameSite(child.url, siteURL(ctx)) && supportedMirror(child, ctx); }).slice(0, 4).map(function (child) {
+          child.label = m.label; return resolveMirror(child, ctx);
+        })).then(function (groups) { var out = []; groups.forEach(function (g) { out = out.concat(g); }); return out; });
+      }).catch(function (e) { log(m.label + ': ' + e.message); return []; });
+    }
     var host = new URL(m.url).hostname.toLowerCase(), resolver;
     if (/(^|\.)dailymotion\.com$/.test(host)) resolver = dailymotion;
     else if (/(^|\.)rumble\.com$/.test(host)) resolver = rumble;
     else if (/(^|\.)ok\.ru$/.test(host)) resolver = okru;
     else if (host === 'play.streamplay.co.in') resolver = streamplay;
-    else if (/\.(?:m3u8|mp4|mkv|webm)(?:[?#]|$)/i.test(m.url)) resolver = function () { return Promise.resolve([stream(m.url, m.label, 'Auto', [], SITE + '/')]); };
+    else if (host === 'dhdpalyer.blogspot.com') resolver = function () {
+      var out = [], subs = [], videos = [];
+      (m.url.split('?')[1] || '').split('&').forEach(function (part) {
+        var pair = part.split('='), value;
+        try { value = decodeURIComponent(pair.slice(1).join('=')).split('|'); } catch (_) { return; }
+        if (pair[0] === 'sub') { var t = subtitle(value.slice(1).join('|'), value[0], value[0], m.url); if (t) subs.push(t); }
+        if (pair[0] === 'video') videos.push(value);
+      });
+      videos.forEach(function (v) { var url = v.slice(1).join('|'); if (/\.(?:mp4|m3u8|webm)(?:[?#]|$)/i.test(url)) out.push(stream(url, 'Direct', 'Auto', subs, m.url)); });
+      return Promise.resolve(out.filter(Boolean));
+    };
+    else if (/\.(?:m3u8|mp4|mkv|webm)(?:[?#]|$)/i.test(m.url)) resolver = function () { return Promise.resolve([stream(m.url, m.label, 'Auto', [], siteURL(ctx) + '/')]); };
     else { log('Unsupported embed host: ' + host); return Promise.resolve([]); }
     return Promise.resolve().then(function () { return resolver(m, ctx); }).then(function (sources) {
       return Promise.all(sources.map(function (s) { return expand(s, ctx); })).then(function (groups) {
@@ -415,10 +498,20 @@
     }).catch(function (e) { log(m.label + ': ' + e.message); return []; });
   }
   function pageStreams(page, ctx) {
-    return request(page, SITE + '/', ctx).then(function (r) {
+    return request(page, siteURL(ctx) + '/', ctx).then(function (r) {
       var $ = cheerio.load(r.body), title = $('h1').text();
       if (/\b(?:preview|trailer)\b/i.test(title)) return [];
-      return Promise.all(mirrors(r.body, r.url, $).slice(0, 8).map(function (m) { return resolveMirror(m, ctx); })).then(function (groups) {
+      var ready = [];
+      var work = Promise.all(mirrors(r.body, r.url, $).filter(function (m) { return supportedMirror(m, ctx); }).slice(0, 12).map(function (m) {
+        return resolveMirror(m, ctx).then(function (sources) {
+          if (ctx.site) sources.forEach(function (s) {
+            var variant = mirrorVariant(m.label);
+            s.name = ctx.site.name + ' | ' + s.name.replace('DonghuaStream | ', '') + (variant ? ' | ' + variant : '');
+          });
+          ready.push(sources); return sources;
+        });
+      }));
+      return bounded(work, Math.max(1, 50000 - (Date.now() - ctx.start)), function () { return ready; }).then(function (groups) {
         var out = [];
         groups.forEach(function (g) { out = out.concat(g); });
         return displayOrder(uniqueQualities(out));
@@ -488,13 +581,29 @@
     if ((!/^[1-9]\d*$/.test(id) && !/^kitsu:[1-9]\d*$/.test(id)) ||
         (type !== 'movie' && type !== 'tv')) return Promise.resolve([]);
     if (type === 'tv' && (!/^\d+$/.test(String(season)) || !/^[1-9]\d*$/.test(String(episode)))) return Promise.resolve([]);
-    var ctx = { start: Date.now() }; season = Number(season); episode = Number(episode);
-    return metadata(id, type, ctx).then(function (meta) {
+    var ctx = { start: Date.now() }, completed = []; season = Number(season); episode = Number(episode);
+    function combine(groups) {
+      var out = [], seen = {};
+      groups.forEach(function (group) { group.forEach(function (s) {
+        var key = s.url + '|' + JSON.stringify(s.headers) + '|' + JSON.stringify(s.subtitles);
+        if (!seen[key]) { seen[key] = true; out.push(s); }
+      }); });
+      return out;
+    }
+    var work = metadata(id, type, ctx).then(function (meta) {
       if (!meta || !aliases(meta).length) return [];
-      return search(meta, season, type, ctx).then(function (cards) {
-        return findPage(cards, meta, type, season, episode, ctx);
-      }).then(function (page) { return page ? pageStreams(page, ctx) : []; });
+      return Promise.all(SITES.map(function (site) {
+        var child = { start: ctx.start, site: site };
+        return search(meta, season, type, child).then(function (cards) {
+          return findPage(cards, meta, type, season, episode, child);
+        }).then(function (page) { return page ? pageStreams(page, child) : []; })
+          .then(function (sources) { completed.push(sources); return sources; })
+          .catch(function (e) { log(site.name + ': ' + e.message); return []; });
+      })).then(function (groups) {
+        return combine(groups);
+      });
     }).catch(function (e) { log(e.message); return []; });
+    return bounded(work, 52000, function () { return combine(completed); });
   }
   module.exports = { getStreams: getStreams };
 }());
