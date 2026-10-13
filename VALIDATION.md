@@ -1,10 +1,10 @@
 # Validation report
 
-Version: **1.0.1**. Checked on **13 October 2026**.
+Version: **1.0.2**. Checked on **13 October 2026**.
 
 ## Automated checks
 
-**39 checks passed** with `tests/validate.cjs`:
+**43 checks passed** with `tests/validate.cjs`:
 
 - Manifest validity, unique provider ID, matching versions, and existing file paths.
 - ES5 syntax, allowed runtime dependency, and absence of Node, DOM, timer, or downloaded-script execution requirements in the provider.
@@ -27,11 +27,11 @@ The replay used mocked network responses. It verifies runtime integration, not l
 
 ## Live public-site test
 
-Test title: **Renegade Immortal (2023), TMDB 223911, S1 E162**.
+Test title: **Renegade Immortal (2023), TMDB 224311, S1 E162**.
 
 TMDB metadata was supplied as a test fixture. The site search, series page, episode page, public player data, and playlist requests were fetched live. This is not a live authenticated TMDB test.
 
-The refreshed v1.0.1 live lookup returned **16 source entries across three servers** in approximately 43 seconds. The resolvers for all four observed hosts were exercised; the confirmed dead All Sub Player playlist was omitted. Dailymotion's retained result remains unverified for playback.
+The refreshed v1.0.2 live lookup returned **16 source entries across three servers** in approximately 43 seconds. The resolvers for all four observed hosts were exercised; the confirmed dead All Sub Player playlist was omitted. Dailymotion's retained result remains unverified for playback.
 
 | Server | Observed result | Playback evidence / limitation |
 | --- | --- | --- |
@@ -62,3 +62,7 @@ The same manifest fields, module entry point, TMDB binding, fetch interface, per
 
 - [NuvioTVSmart runtime implementation](https://github.com/NuvioMedia/NuvioTVSmart/blob/main/js/core/player/pluginWorker.js)
 - [Nuvio provider API documentation](https://github.com/yoruix/nuvio-providers/blob/template/DOCUMENTATION.md)
+
+## Duplicate resolution fix (v1.0.2)
+
+Four regression checks cover one fixed resolution per server, MP4 preference, highest bitrate HLS selection, adaptive Auto retention, equivalent 4K labels, subtitle header preservation and distinct unknown qualities.
