@@ -18,7 +18,7 @@ function load(fetch,key='fixture',UrlConstructor=URL){
   }};
   if(key!==null)context.TMDB_API_KEY=key;
   // Test helpers stay private in the distributed provider.
-  const code=source.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams, absolute, decode64, rankCards, chooseEpisode, episodeNumbers, mirrors, master, expand, unpackAssignments, trackList, pageStreams, uniqueQualities};');
+  const code=source.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams, absolute, decode64, rankCards, chooseEpisode, episodeNumbers, mirrors, master, expand, unpackAssignments, trackList, pageStreams, uniqueQualities, displayOrder};');
   vm.runInNewContext(code,context,{timeout:2000});return context.module.exports;
 }
 const meta={name:'Renegade Immortal',original_name:'仙逆',alternative_titles:{results:[{title:'Xian Ni'}]},seasons:[{season_number:1,episode_count:52},{season_number:2,episode_count:30}]};
@@ -33,8 +33,8 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.0.3');assert.equal(manifest.scrapers.length,1);
-    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename)));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
+    assert.equal(manifest.version,'1.0.4');assert.equal(manifest.scrapers.length,1);
+    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
     acorn.parse(source,{ecmaVersion:5});assert(!/\b(?:Buffer|process|document|window|setTimeout|XMLHttpRequest)\s*[.(]/.test(source.replace(/window\\?\./g,'')));assert(!/\beval\s*\(|new\s+Function\b/.test(source));
@@ -135,6 +135,31 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
       'DonghuaStream | OK.ru|1080p','DonghuaStream | OK.ru|720p',
       'DonghuaStream | Rumble|Auto','DonghuaStream | Rumble|1440p','DonghuaStream | Rumble|480p'
     ]);
+  });
+  check('mobile alphabetical display preserves numbered per-server quality order',()=>{
+    const original=p.displayOrder(p.uniqueQualities([
+      entry('OK.ru','1080p','https://cdn.example/1080.mp4','mp4'),
+      entry('OK.ru','Auto','https://cdn.example/master.m3u8','hls'),
+      entry('OK.ru','4K','https://cdn.example/4k.mp4','mp4'),
+      entry('OK.ru','720p','https://cdn.example/720.mp4','mp4'),
+      entry('Rumble','720p','https://rumble.example/720.mp4','mp4'),
+      entry('Rumble','Auto','https://rumble.example/master.m3u8','hls'),
+      entry('Rumble','1080p','https://rumble.example/1080.mp4','mp4')
+    ]));
+    // Mirrors StreamFetchSupport.sortedForGroupedDisplay and toStreamItem.
+    const mobile=Array.from(original).reverse().sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase())||a.quality.toLowerCase().localeCompare(b.quality.toLowerCase()));
+    assert.deepEqual(mobile.map(s=>s.quality),['Auto','4K','1080p','720p','Auto','1080p','720p']);
+    assert(mobile[0].name.endsWith('01 - Auto'));assert(mobile[4].name.endsWith('01 - Auto'));
+  });
+  check('quality labels preserve 1080p without shortening and keep playback data',()=>{
+    const item=entry('OK.ru','1080p','https://cdn.example/1080.mp4','mp4',0,[{url:'https://cdn.example/en.vtt',language:'en'}]);
+    const rendered=p.displayOrder([item])[0];
+    assert.equal(rendered.quality,'1080p');assert(rendered.name.endsWith('01 - 1080p'));
+    assert.equal(rendered.url,item.url);assert.equal(rendered.subtitles[0].language,'en');
+  });
+  check('cropped low-resolution HLS uses the standard width tier',()=>{
+    const low='#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=300000,RESOLUTION=640x362\na.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=200000,RESOLUTION=640x272\nb.m3u8';
+    assert.deepEqual(Array.from(p.master(low,'https://cdn.example/master.m3u8').variants,v=>v.quality),['360p','360p']);
   });
   const opts=JSON.stringify({flashvars:{metadata:JSON.stringify({videos:[{name:'full',url:'https://okcdn.example/video.mp4'}]})}}).replace(/"/g,'&quot;');
   let seenRequests=[];

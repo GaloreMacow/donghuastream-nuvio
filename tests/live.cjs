@@ -33,7 +33,7 @@ vm.runInNewContext(source,sandbox);
   const streams=await sandbox.module.exports.getStreams('223911','tv',1,162);
   const summary={elapsedSeconds:Math.round((Date.now()-start)/1000),metadata:'fixture; site and player requests are live',
     streamCount:streams.length,servers:{},requests:records};
-  for(const s of streams){const server=s.name.replace('DonghuaStream | ','');(summary.servers[server]||=[]).push({quality:s.quality,subtitleLanguages:s.subtitles.map(t=>t.language),title:s.title});}
+  for(const s of streams){const server=s.name.replace('DonghuaStream | ','').split(' | ')[0];(summary.servers[server]||=[]).push({quality:s.quality,subtitleLanguages:s.subtitles.map(t=>t.language),title:s.title});}
   console.log(JSON.stringify(summary,null,2));
   if(!streams.length) process.exitCode=1;
 })().catch(e=>{console.error(e.message);process.exitCode=1;});
