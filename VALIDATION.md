@@ -78,3 +78,7 @@ The provider accepts explicit Kitsu anime IDs, optional Kitsu episode suffixes, 
 On 13 October 2026, the Soul Land site listing contained episodes 262, 263 and 264 only; a site search for Soul Land Episode 1 returned no results. Earlier episodes were not found in this check.
 
 Soul Land S1E264 live lookup reached the correct series and episode page using fixture TMDB metadata with the combined title, then queried Dailymotion and All Sub Player. Neither host supplied usable sources in this environment; the result was zero streams. This confirms title/episode lookup, not successful playback.
+
+## v1.0.6 manifest compatibility recovery
+
+Restored the plain providers/donghuastream.js filename and movie/tv manifest types used by the original working package. Kitsu series IDs still work because the Kitsu catalog exposes series items, which Nuvio normalizes to TV. The JavaScript anime alias remains available. This removes recent manifest differences as possible loader compatibility factors; an on-device load failure was not reproduced in the container.
