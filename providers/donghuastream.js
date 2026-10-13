@@ -409,7 +409,7 @@
     });
   }
   function uniqueQualities(sources) {
-    var out = [], positions = {};
+    var out = [], positions = {}, servers = {}, serverCount = 0;
     function formatRank(s) {
       var type = s._type || s.type;
       if (/^auto$/i.test(s.quality) && (type === 'hls' || /\.m3u8(?:[?#]|$)/i.test(s.url))) return 4;
@@ -419,6 +419,7 @@
     }
     sources.forEach(function (s) {
       if (!s) return;
+      if (!Object.prototype.hasOwnProperty.call(servers, s.name)) servers[s.name] = serverCount++;
       var q = String(s.quality || '').toLowerCase(), number = q.match(/^(\d+)p$/);
       if (q === '4k') q = '2160p';
       // Unknown resolutions stay separate; do not collapse unrelated unknown sources.
@@ -437,7 +438,14 @@
       selected.subtitles = subs; out[index] = selected;
     });
     out.forEach(function (s) { delete s._type; delete s._bandwidth; });
-    return out;
+    function resolution(s) {
+      if (/^auto$/i.test(s.quality)) return 100000;
+      if (/^4k$/i.test(s.quality)) return 2160;
+      return parseInt(s.quality, 10) || 0;
+    }
+    return out.sort(function (a, b) {
+      return servers[a.name] - servers[b.name] || resolution(b) - resolution(a);
+    });
   }
   function getStreams(tmdbId, mediaType, season, episode) {
     var id = String(tmdbId == null ? '' : tmdbId).replace(/^tmdb:/, ''), type = String(mediaType || '').toLowerCase();
