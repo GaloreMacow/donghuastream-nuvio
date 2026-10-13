@@ -33,8 +33,8 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.0.4');assert.equal(manifest.scrapers.length,1);
-    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
+    assert.equal(manifest.version,'1.0.5');assert.equal(manifest.scrapers.length,1);
+    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv','anime']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
     acorn.parse(source,{ecmaVersion:5});assert(!/\b(?:Buffer|process|document|window|setTimeout|XMLHttpRequest)\s*[.(]/.test(source.replace(/window\\?\./g,'')));assert(!/\beval\s*\(|new\s+Function\b/.test(source));
@@ -52,6 +52,36 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   check('query-only HLS URLs retain the playlist filename',()=>assert.equal(limited.absolute('?token=a%2Fb&expires=123','https://cdn.example/path/master.m3u8?old=1'),'https://cdn.example/path/master.m3u8?token=a%2Fb&expires=123'));
   check('root parent paths produce a single slash',()=>assert.equal(limited.absolute('..','https://cdn.example/a/master.m3u8'),'https://cdn.example/'));
   check('TV search excludes movies and unrelated titles',()=>{const c=p.rankCards(cards,meta,1,'tv');assert.equal(c.length,1);assert.equal(c[0].title,'Renegade Immortal');});
+  const soulCards='<div class="bsx"><a title="Soul Land" href="'+SITE+'/anime/soul-land/"><h2>Soul Land</h2></a></div>';
+  check('combined translated titles match Soul Land without matching sequels',()=>{
+    const combined={name:'Douluo Dalu (Soul Land)',original_name:'斗罗大陆'};
+    assert.equal(p.rankCards(soulCards,combined,1,'tv').length,1);
+    assert.equal(p.rankCards(soulCards,{name:'Soul Land 2 The Peerless Tang Sect'},1,'tv').length,0);
+  });
+  const kitsuCalls=[];
+  const kitsuProvider=load((u)=>{
+    kitsuCalls.push(u);
+    if(u==='https://kitsu.io/api/edge/anime/41004')return Promise.resolve(response({data:{id:'41004',attributes:{canonicalTitle:'Douluo Dalu',abbreviatedTitles:['Soul Land'],titles:{zh_cn:'斗罗大陆'},episodeCount:26}}},u));
+    if(u.includes('/?s='))return Promise.resolve(response(soulCards,u));
+    if(u===SITE+'/anime/soul-land/')return Promise.resolve(response(episodeList('Soul Land','1'),u));
+    if(u===SITE+'/correct/')return Promise.resolve(response('<h1>Soul Land Episode 1</h1><select class="mirror">'+option('Rumble','https://rumble.com/embed/vsoul/')+'</select>',u));
+    if(u.includes('rumble.com/embedJS/'))return Promise.resolve(response({ua:{mp4:{720:{url:'https://cdn.example/soul-1.mp4'}}}},u));
+    throw Error('Unmocked Kitsu URL '+u);
+  },null);
+  const kitsuStreams=await kitsuProvider.getStreams('kitsu:41004','series',1,1);
+  check('Kitsu IDs resolve title aliases and streams without a TMDB key',()=>{
+    assert.equal(kitsuStreams.length,1);assert.equal(kitsuStreams[0].quality,'720p');
+    assert(!kitsuCalls.some(u=>u.includes('api.themoviedb.org')));
+  });
+  const kitsuEpisode=await kitsuProvider.getStreams('kitsu:41004:1','anime',null,null);
+  check('Kitsu episode IDs supply missing season and episode',()=>assert.equal(kitsuEpisode.length,1));
+  const beforeConflict=kitsuCalls.length;
+  const conflictingKitsu=await kitsuProvider.getStreams('kitsu:41004:2','series',1,1);
+  check('conflicting Kitsu episode IDs make no requests',()=>{
+    assert.equal(conflictingKitsu.length,0);assert.equal(kitsuCalls.length,beforeConflict);
+  });
+  const missing=await kitsuProvider.getStreams('kitsu:41004','series',1,2);
+  check('an unavailable Kitsu episode never substitutes episode one',()=>assert.equal(missing.length,0));
   check('absolute numbering across TMDB seasons',()=>assert.equal(p.chooseEpisode(episodeList('Renegade Immortal','53'),{siteSeason:null},meta,'tv',2,1),SITE+'/correct/'));
   check('explicit site season uses local episode numbering',()=>assert.equal(p.chooseEpisode(episodeList('Renegade Immortal Season 2','1'),{siteSeason:2},meta,'tv',2,1),SITE+'/correct/'));
   check('bracket absolute numbers map continuous TMDB season',()=>assert.equal(p.chooseEpisode(episodeList('Renegade Immortal Season 4','160 [245]'),{siteSeason:4},meta,'tv',1,245),SITE+'/correct/'));
@@ -182,7 +212,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   check('one broken server leaves the other servers intact',()=>assert(!output.some(s=>s.name.includes('Rumble'))));
   check('only media links are returned, with subtitle attachments',()=>{assert(output.every(s=>!s.url.includes('/embed/')));assert(output.find(s=>s.name.includes('All Sub Player')).subtitles.some(t=>t.language==='fr'));});
   check('explicit HLS type survives provider output',()=>assert(output.filter(s=>s.name.includes('Dailymotion')).every(s=>s.type==='hls')));
-  for(const type of ['series','show','other']){
+  for(const type of ['series','show','other','anime']){
     const aliased=await integrated.getStreams('223911',type,1,1);
     check(type+' media alias uses TV episode requests',()=>assert.equal(aliased.length,output.length));
   }
