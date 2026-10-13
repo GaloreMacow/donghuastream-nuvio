@@ -18,30 +18,7 @@ The provider contract has been compared with Nuvio Android TV, NuvioMobile, Nuvi
 
 The plugin uses the TMDB key supplied by Nuvio's runtime. It contains no embedded API key. If your app does not supply `TMDB_API_KEY`, title lookup cannot run; configure TMDB in Nuvio or use a build that supplies this binding.
 
-## GitHub repository information
 
-- **Repository name:** `donghuastream-nuvio`
-- **README title:** DonghuaStream for Nuvio
-- **Description:** DonghuaStream provider for plugin-enabled Nuvio builds, with multiple video servers, available quality options, subtitles and TMDB title/episode matching.
-- **Suggested topics:** `nuvio`, `donghua`, `javascript`, `streaming`, `subtitles`
-
-## Upload to GitHub
-
-1. Use an existing suitable repository and preserve its visibility and history. If creating a new repository, use `donghuastream-nuvio` and keep it **private by default**. A private repository's raw files normally require authentication; this provider does not configure GitHub authentication for Nuvio's repository loader. Installing through an unauthenticated raw manifest URL requires files accessible to Nuvio. Change visibility only with the repository owner's explicit approval.
-2. Extract this ZIP. Upload the **extracted files and directories** directly to the repository root.
-3. Preserve the `providers` directory. The repository root must contain `manifest.json`, and the provider must be at `providers/donghuastream.js`.
-4. Include `README.md`. It is useful for setup, though Nuvio loads the manifest and provider rather than the README.
-5. Commit with the title **Add DonghuaStream plugin for Nuvio**.
-6. Open `manifest.json` in GitHub and choose **Raw**. Copy that URL.
-7. In Nuvio, open **Settings > Plugins** (or **Content & Discovery > Plugins**, depending on the build), add the copied manifest URL, refresh, and enable **DonghuaStream**.
-
-For account `GaloreMacow`, repository `donghuastream-nuvio`, branch `main`, the expected URL **after you upload the files** is:
-
-```text
-https://raw.githubusercontent.com/GaloreMacow/donghuastream-nuvio/main/manifest.json
-```
-
-This is a URL template, not a published repository created by this package. GitHub Pages, a hosted backend, and a Stremio addon server are not needed.
 
 **GitHub description:**
 
