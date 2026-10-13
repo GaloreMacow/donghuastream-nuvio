@@ -331,7 +331,8 @@
     var m = String(a.RESOLUTION || '').match(/^(\d+)x(\d+)$/);
     if (!m) return '';
     var width = Number(m[1]), h = Number(m[2]);
-    var q = width >= 3840 ? 2160 : width >= 2560 ? 1440 : width >= 1920 ? 1080 : width >= 1280 ? 720 : width >= 854 ? 480 : h;
+    var q = width >= 3840 ? 2160 : width >= 2560 ? 1440 : width >= 1920 ? 1080 : width >= 1280 ? 720 :
+      width >= 854 ? 480 : width >= 640 ? 360 : width >= 426 ? 240 : width >= 256 ? 144 : h;
     return q === 2160 ? '4K' : q + 'p';
   }
   function master(text, base) {
@@ -404,7 +405,7 @@
       return Promise.all(mirrors(r.body, r.url, $).slice(0, 8).map(function (m) { return resolveMirror(m, ctx); })).then(function (groups) {
         var out = [];
         groups.forEach(function (g) { out = out.concat(g); });
-        return uniqueQualities(out);
+        return displayOrder(uniqueQualities(out));
       });
     });
   }
@@ -446,6 +447,17 @@
     return out.sort(function (a, b) {
       return servers[a.name] - servers[b.name] || resolution(b) - resolution(a);
     });
+  }
+  function displayOrder(sources) {
+    var counters = {};
+    sources.forEach(function (s) {
+      var server = s.name, index = (counters[server] || 0) + 1;
+      counters[server] = index;
+      // Mobile/desktop re-sort by streamLabel then streamSubtitle, ignoring array order.
+      // Visible option numbers keep Auto first and resolutions descending in that path.
+      s.name = server + ' | ' + (index < 10 ? '0' : '') + index + ' - ' + s.quality;
+    });
+    return sources;
   }
   function getStreams(tmdbId, mediaType, season, episode) {
     var id = String(tmdbId == null ? '' : tmdbId).replace(/^tmdb:/, ''), type = String(mediaType || '').toLowerCase();
