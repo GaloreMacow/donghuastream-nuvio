@@ -383,4 +383,43 @@
     else if (/\.(?:m3u8|mp4|mkv|webm)(?:[?#]|$)/i.test(m.url)) resolver = function () { return Promise.resolve([stream(m.url, m.label, 'Auto', [], SITE + '/')]); };
     else { log('Unsupported embed host: ' + host); return Promise.resolve([]); }
     return Promise.resolve().then(function () { return resolver(m, ctx); }).then(function (sources) {
-      return Promise.all(sources.map(function (s) { return expand(s, ctx); 
+      return Promise.all(sources.map(function (s) { return expand(s, ctx); })).then(function (groups) {
+        var out = []; groups.forEach(function (g) { out = out.concat(g); });
+        function score(s) {
+          if (/^auto$/i.test(s.quality)) return 100000;
+          if (/4k/i.test(s.quality)) return 2160;
+          return parseInt(s.quality, 10) || 0;
+        }
+        return out.sort(function (a, b) { return score(b) - score(a); });
+      });
+    }).catch(function (e) { log(m.label + ': ' + e.message); return []; });
+  }
+  function pageStreams(page, ctx) {
+    return request(page, SITE + '/', ctx).then(function (r) {
+      var $ = cheerio.load(r.body), title = $('h1').text();
+      if (/\b(?:preview|trailer)\b/i.test(title)) return [];
+      return Promise.all(mirrors(r.body, r.url, $).slice(0, 8).map(function (m) { return resolveMirror(m, ctx); })).then(function (groups) {
+        var out = [], seen = {};
+        groups.forEach(function (g) { g.forEach(function (s) {
+          // Keep the same URL from different servers only once; its own subtitles stay attached.
+          if (s && !seen[s.url]) { seen[s.url] = true; delete s._type; out.push(s); }
+        }); });
+        return out;
+      });
+    });
+  }
+  function getStreams(tmdbId, mediaType, season, episode) {
+    var id = String(tmdbId == null ? '' : tmdbId).replace(/^tmdb:/, ''), type = String(mediaType || '').toLowerCase();
+    if (type === 'series' || type === 'show' || type === 'other') type = 'tv';
+    if (!/^[1-9]\d*$/.test(id) || (type !== 'movie' && type !== 'tv')) return Promise.resolve([]);
+    if (type === 'tv' && (!/^\d+$/.test(String(season)) || !/^[1-9]\d*$/.test(String(episode)))) return Promise.resolve([]);
+    var ctx = { start: Date.now() }; season = Number(season); episode = Number(episode);
+    return metadata(id, type, ctx).then(function (meta) {
+      if (!meta || !aliases(meta).length) return [];
+      return search(meta, season, type, ctx).then(function (cards) {
+        return findPage(cards, meta, type, season, episode, ctx);
+      }).then(function (page) { return page ? pageStreams(page, ctx) : []; });
+    }).catch(function (e) { log(e.message); return []; });
+  }
+  module.exports = { getStreams: getStreams };
+}());
