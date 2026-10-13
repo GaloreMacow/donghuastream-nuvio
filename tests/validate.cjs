@@ -33,8 +33,8 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.0.5');assert.equal(manifest.scrapers.length,1);
-    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv','anime']);}
+    assert.equal(manifest.version,'1.0.6');assert.equal(manifest.scrapers.length,1);
+    const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
     acorn.parse(source,{ecmaVersion:5});assert(!/\b(?:Buffer|process|document|window|setTimeout|XMLHttpRequest)\s*[.(]/.test(source.replace(/window\\?\./g,'')));assert(!/\beval\s*\(|new\s+Function\b/.test(source));
