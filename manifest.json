@@ -1,15 +1,199 @@
 {
   "name": "DonghuaStream for Nuvio",
-  "version": "1.1.0",
-  "description": "Search nine donghua sites together, with qualities and subtitles.",
+  "version": "1.2.0",
+  "description": "Choose individual donghua sites, with available qualities and subtitles.",
   "author": "GaloreMacow",
   "scrapers": [
     {
       "id": "donghuastream",
-      "name": "DonghuaStream",
-      "version": "1.1.0",
-      "description": "DonghuaStream, AnimeXin, Anime4i, Lucifer Donghua .in/.org, AnimeKhor, Donghua World, DongSub and H-Donghua.",
+      "name": "DonghuaStream | DonghuaStream",
+      "version": "1.2.0",
+      "description": "Search DonghuaStream only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-animexin",
+      "name": "DonghuaStream | AnimeXin",
+      "version": "1.2.0",
+      "description": "Search AnimeXin only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-animexin.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-anime4i",
+      "name": "DonghuaStream | Anime4i",
+      "version": "1.2.0",
+      "description": "Search Anime4i only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-anime4i.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-lucifer-in",
+      "name": "DonghuaStream | Lucifer Donghua .in",
+      "version": "1.2.0",
+      "description": "Search Lucifer Donghua .in only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-lucifer-in.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-lucifer-org",
+      "name": "DonghuaStream | Lucifer Donghua .org",
+      "version": "1.2.0",
+      "description": "Search Lucifer Donghua .org only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-lucifer-org.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-animekhor",
+      "name": "DonghuaStream | AnimeKhor",
+      "version": "1.2.0",
+      "description": "Search AnimeKhor only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-animekhor.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-donghuaworld",
+      "name": "DonghuaStream | Donghua World",
+      "version": "1.2.0",
+      "description": "Search Donghua World only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-donghuaworld.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-dongsub",
+      "name": "DonghuaStream | DongSub",
+      "version": "1.2.0",
+      "description": "Search DongSub only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-dongsub.js",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "enabled": true,
+      "contentLanguage": [
+        "zh"
+      ],
+      "formats": [
+        "hls",
+        "mp4",
+        "webm"
+      ],
+      "limited": false,
+      "disabledPlatforms": [],
+      "supportsExternalPlayer": true
+    },
+    {
+      "id": "donghuastream-h-donghua",
+      "name": "DonghuaStream | H-Donghua",
+      "version": "1.2.0",
+      "description": "Search H-Donghua only, with available stream qualities and subtitles.",
+      "filename": "providers/donghuastream-h-donghua.js",
       "supportedTypes": [
         "movie",
         "tv"

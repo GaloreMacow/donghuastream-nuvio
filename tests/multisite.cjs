@@ -4,7 +4,7 @@ const fixtures=JSON.parse(fs.readFileSync(path.join(__dirname,'sites.json'),'utf
 const keys=Object.keys(fixtures),meta={name:'Renegade Immortal',alternative_titles:{results:[{title:'Xian Ni'}]},seasons:[{season_number:1,episode_count:200}]};
 let passed=0;function check(name,fn){fn();passed++;console.log('PASS '+name);}
 function response(body,url){return {ok:true,status:200,url,text:()=>Promise.resolve(typeof body==='string'?body:JSON.stringify(body))};}
-function load(fetch,timers={}){const box={module:{exports:{}},URL,console:{warn(){},log(){}},TMDB_API_KEY:'fixture',require:()=>cheerio,fetch,...timers};vm.runInNewContext(source.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams,SITES,rankCards,chooseEpisode,mirrors,supportedMirror,pageStreams,findPage,bounded};'),box);return box.module.exports;}
+function load(fetch,timers={},code=source.replace("var SOURCE_SITE = 'donghuastream';","var SOURCE_SITE = '';")){const box={module:{exports:{}},URL,console:{warn(){},log(){}},TMDB_API_KEY:'fixture',require:()=>cheerio,fetch,...timers};vm.runInNewContext(code.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams,SITES,rankCards,chooseEpisode,mirrors,supportedMirror,pageStreams,findPage,bounded};'),box);return box.module.exports;}
 (async()=>{
  const p=load(()=>Promise.reject(Error('Unexpected request')));
  keys.forEach((key,index)=>{const f=fixtures[key],site=p.SITES[index+1];
@@ -44,5 +44,27 @@ function load(fetch,timers={}){const box={module:{exports:{}},URL,console:{warn(
  check('DongSub older episodes use exact public search API',()=>{assert(called);assert.equal(found,ds.url+'/exact-161/');});
  const timed=load(network,{setTimeout:(fn)=>setTimeout(fn,2),clearTimeout});const fallback=await timed.bounded(new Promise(()=>{}),9000,()=>['partial']);
  check('optional deadline returns completed results without hanging',()=>assert.equal(fallback[0],'partial'));
+ const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../manifest.json'),'utf8'));
+ for(let i=0;i<manifest.scrapers.length;i++){
+  const provider=manifest.scrapers[i],site=p.SITES[i];
+  const code=fs.readFileSync(path.join(__dirname,'..',provider.filename),'utf8');
+  const requested=[];
+  const isolated=load(u=>{requested.push(u);return network(u);},{},code);
+  const results=await isolated.getStreams(223911,'tv',1,162);
+  check(site.name+' provider searches only its selected site',()=>{
+   assert(requested.some(u=>u.startsWith(site.url+'/')), 'Selected site was never requested');
+   for(const other of p.SITES.filter(s=>s.url!==site.url))assert(!requested.some(u=>u.startsWith(other.url+'/')), 'Unexpected request to '+other.name);
+   assert(results.every(s=>s.name.startsWith(site.name+' | ')), 'Foreign site result');
+   if(['AnimeXin','Lucifer Donghua .in','Lucifer Donghua .org','AnimeKhor','Donghua World'].includes(site.name))assert(results.length>0,'Missing fixture streams');
+  });
+  const failedCalls=[];
+  const failed=load(u=>{failedCalls.push(u);return u.startsWith(site.url+'/')?Promise.reject(Error('Site unavailable')):network(u);},{},code);
+  const empty=await failed.getStreams(223911,'tv',1,162);
+  check(site.name+' failure does not query disabled sites',()=>{
+   assert.equal(empty.length,0);
+   for(const other of p.SITES.filter(s=>s.url!==site.url))assert(!failedCalls.some(u=>u.startsWith(other.url+'/')));
+  });
+ }
  console.log('\n'+passed+' multi-site checks passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
