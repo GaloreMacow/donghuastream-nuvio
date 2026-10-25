@@ -1,6 +1,10 @@
-# Validation — v1.2.1
+# Validation — v1.2.2
 
 Reviewed and optimized on **25 October 2026**. All nine independent site providers, their IDs, and their settings switches are retained.
+
+## Stream labels
+
+Removed redundant site names from stream results across all nine providers. Provider names and IDs remain unchanged. Results retain the video host, language or subtitle variant, option number, and quality (for example, `OK.ru | English | 01 - Auto`). Fixture checks verify host-only results and existing quality ordering.
 
 ## Optimization
 

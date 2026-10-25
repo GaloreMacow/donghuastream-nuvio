@@ -7,7 +7,7 @@ A plugin with separate providers for nine donghua sites. Enable only the sites y
 - Individual provider switches for DonghuaStream, AnimeXin, Anime4i, Lucifer Donghua `.in`, Lucifer Donghua `.org`, AnimeKhor, Donghua World, DongSub, and H-Donghua.
 - Each provider searches its own site only; enable several to search those sites together.
 - Matches titles and episodes using TMDB or Kitsu metadata.
-- Labels streams by site and server, keeping available language versions separate.
+- Labels streams by server and language; provider headings identify each site.
 - Removes duplicate qualities and sorts Auto first, then resolutions from highest to lowest.
 - Includes available subtitles. A failed site does not stop other enabled providers.
 - Duplicate qualities are removed within each provider. Shared links from different enabled providers may still appear separately.

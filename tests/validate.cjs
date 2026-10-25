@@ -33,7 +33,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.2.1');assert.equal(manifest.scrapers.length,9);
+    assert.equal(manifest.version,'1.2.2');assert.equal(manifest.scrapers.length,9);
     const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
@@ -103,7 +103,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   check('invalid input makes no network request',()=>assert.equal(calls,0));
   assert.equal((await load(()=>Promise.reject(Error('Unexpected')),null).getStreams('1','tv',1,1)).length,0);passed++;console.log('PASS missing TMDB key fails cleanly');
   const hls=load((u)=>Promise.resolve(response(externalMaster,u)));
-  const s={name:'DonghuaStream | Rumble',title:'Rumble | Auto',url:'https://cdn.example/master.m3u8',headers:{Referer:SITE},subtitles:[],_type:'hls'};
+  const s={name:'Rumble',title:'Rumble | Auto',url:'https://cdn.example/master.m3u8',headers:{Referer:SITE},subtitles:[],_type:'hls'};
   const audio=await hls.expand(s,{start:Date.now()});
   check('external audio preserves master instead of silent child',()=>{assert.equal(audio.length,1);assert.equal(audio[0].url,s.url);assert(audio[0].title.includes('1080p'));});
   const expanded=await load(u=>Promise.resolve(response(master,u))).expand({...s},{start:Date.now()});
@@ -115,7 +115,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   const removed=await load(u=>Promise.resolve(response('',u,404))).expand({...s},{start:Date.now()});
   check('404 playlists are omitted',()=>assert.equal(removed.length,0));
   function entry(server,quality,url,type,bandwidth=0,subtitles=[]) {
-    return {name:'DonghuaStream | '+server,quality,url,type,_type:type,_bandwidth:bandwidth,subtitles};
+    return {name:''+server,quality,url,type,_type:type,_bandwidth:bandwidth,subtitles};
   }
   const duplicates=p.uniqueQualities([
     entry('OK.ru','1080p','https://cdn.example/1080.m3u8','hls',4000000),
@@ -161,9 +161,9 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
       entry('Rumble','1440p','https://rumble.example/1440.mp4','mp4')
     ]);
     assert.deepEqual(Array.from(sorted,s=>s.name+'|'+s.quality),[
-      'DonghuaStream | OK.ru|Auto','DonghuaStream | OK.ru|4K',
-      'DonghuaStream | OK.ru|1080p','DonghuaStream | OK.ru|720p',
-      'DonghuaStream | Rumble|Auto','DonghuaStream | Rumble|1440p','DonghuaStream | Rumble|480p'
+      'OK.ru|Auto','OK.ru|4K',
+      'OK.ru|1080p','OK.ru|720p',
+      'Rumble|Auto','Rumble|1440p','Rumble|480p'
     ]);
   });
   check('mobile alphabetical display preserves numbered per-server quality order',()=>{

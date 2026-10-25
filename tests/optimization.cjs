@@ -70,7 +70,7 @@ async function benchmark(code) {
   const cc=load(source,u=>Promise.resolve(response({ua:{mp4:{720:{url:'https://cdn.example/movie.mp4'}}},cc:{en:{path:'https://cdn.example/en.vtt',language:'English'}}},u))),rc={start:Date.now()};const mirror={url:'https://rumble.com/embed/vsame/',label:'English'};
   const first=await cc.p.resolveMirror(mirror,rc);first[0].name='changed';first[0].subtitles.push({url:'bad'});
   const second=await cc.p.resolveMirror(mirror,rc);
-  check('cached host results do not share mutable display state',()=>{assert.equal(second[0].name,'DonghuaStream | Rumble');assert.equal(second[0].subtitles.length,1);});
+  check('cached host results do not share mutable display state',()=>{assert.equal(second[0].name,'Rumble');assert.equal(second[0].subtitles.length,1);});
   const error=await load(source,u=>Promise.resolve(response('{"error":"expired"}',u))).p.expand(stream(),{start:Date.now()});
   check('JSON error pages are not offered as HLS',()=>assert.equal(error.length,0));
   const external='#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",URI="sound.m3u8"\n#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",URI="subs.m3u8"\n#EXT-X-STREAM-INF:BANDWIDTH=4000000,RESOLUTION=1920x800,AUDIO="audio",SUBTITLES="subs"\nvideo.m3u8';

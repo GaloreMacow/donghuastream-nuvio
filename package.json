@@ -1,6 +1,6 @@
 {
   "name": "donghuastream-nuvio",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "description": "DonghuaStream provider for plugin-enabled Nuvio builds",
   "scripts": {

@@ -1,13 +1,13 @@
 {
   "name": "DonghuaStream for Nuvio",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Choose individual donghua sites, with available qualities and subtitles.",
   "author": "GaloreMacow",
   "scrapers": [
     {
       "id": "donghuastream",
       "name": "DonghuaStream",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search DonghuaStream only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream.js",
       "supportedTypes": [
@@ -30,7 +30,7 @@
     {
       "id": "donghuastream-animexin",
       "name": "AnimeXin",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search AnimeXin only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-animexin.js",
       "supportedTypes": [
@@ -53,7 +53,7 @@
     {
       "id": "donghuastream-anime4i",
       "name": "Anime4i",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search Anime4i only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-anime4i.js",
       "supportedTypes": [
@@ -76,7 +76,7 @@
     {
       "id": "donghuastream-lucifer-in",
       "name": "Lucifer Donghua .in",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search Lucifer Donghua .in only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-lucifer-in.js",
       "supportedTypes": [
@@ -99,7 +99,7 @@
     {
       "id": "donghuastream-lucifer-org",
       "name": "Lucifer Donghua .org",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search Lucifer Donghua .org only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-lucifer-org.js",
       "supportedTypes": [
@@ -122,7 +122,7 @@
     {
       "id": "donghuastream-animekhor",
       "name": "AnimeKhor",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search AnimeKhor only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-animekhor.js",
       "supportedTypes": [
@@ -145,7 +145,7 @@
     {
       "id": "donghuastream-donghuaworld",
       "name": "Donghua World",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search Donghua World only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-donghuaworld.js",
       "supportedTypes": [
@@ -168,7 +168,7 @@
     {
       "id": "donghuastream-dongsub",
       "name": "DongSub",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search DongSub only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-dongsub.js",
       "supportedTypes": [
@@ -191,7 +191,7 @@
     {
       "id": "donghuastream-h-donghua",
       "name": "H-Donghua",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "description": "Search H-Donghua only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-h-donghua.js",
       "supportedTypes": [

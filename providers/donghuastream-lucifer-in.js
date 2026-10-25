@@ -311,7 +311,7 @@
   function stream(url, server, quality, subs, ref, type) {
     url = absolute(url, ref);
     if (!url) return null;
-    return { name: 'DonghuaStream | ' + server, title: server + ' | ' + (quality || 'Auto'),
+    return { name: server, title: server + ' | ' + (quality || 'Auto'),
       quality: quality || 'Auto', url: url, headers: { 'User-Agent': UA, Referer: ref },
       subtitles: subs || [], type: type || (/\.m3u8(?:[?#]|$)/i.test(url) ? 'hls' : ''), _type: type || '' };
   }
@@ -529,7 +529,7 @@
         return resolveMirror(m, ctx).then(function (sources) {
           if (ctx.site) sources.forEach(function (s) {
             var variant = mirrorVariant(m.label);
-            s.name = ctx.site.name + ' | ' + s.name.replace('DonghuaStream | ', '') + (variant ? ' | ' + variant : '');
+            s.name += variant ? ' | ' + variant : '';
           });
           ready.push(sources); return sources;
         });

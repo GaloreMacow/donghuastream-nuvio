@@ -30,13 +30,13 @@ function load(fetch,timers={},code=source){const box={module:{exports:{}},URL,co
  }
  const full=load(network),streams=[];
  for(const provider of require('../manifest.json').scrapers){const result=await load(network,{},fs.readFileSync(path.join(__dirname,'..',provider.filename),'utf8')).getStreams(223911,'tv',1,162);streams.push(...result);}
- check('enabled providers return their own sites with complete resolution labels',()=>{for(const key of ['AnimeXin','Lucifer Donghua .in','Lucifer Donghua .org','AnimeKhor','Donghua World'])assert(streams.some(s=>s.name.startsWith(key+' | ')),key);assert(streams.every(s=>/1080p|720p/.test(s.quality)));});
+ check('enabled providers return host-only names with complete resolution labels',()=>{assert(streams.length>0);assert(streams.every(s=>/^(Dailymotion|OK\.ru|Rumble) \| /.test(s.name)));assert(streams.every(s=>/1080p|720p/.test(s.quality)));});
  const a4=await full.pageStreams(fixtures.anime4i.page,{start:Date.now(),site:p.SITES[2]});
- check('Anime4i resolves its supported players',()=>assert(a4.some(s=>s.name.startsWith('Anime4i | '))));
+ check('Anime4i resolves its supported players',()=>assert(a4.some(s=>s.name.startsWith('Dailymotion | '))));
  check('individual provider shared media URLs are deduplicated',()=>assert.equal(new Set(a4.map(s=>s.url)).size,a4.length));
- check('language variants remain distinct',()=>{assert(streams.some(s=>s.name.includes('AnimeXin | OK.ru | English')));assert(streams.some(s=>s.name.includes('AnimeXin | OK.ru | Indonesian')));});
+ check('language variants remain distinct',()=>{assert(streams.some(s=>s.name.includes('OK.ru | English')));assert(streams.some(s=>s.name.includes('OK.ru | Indonesian')));});
  const broken=load(u=>u.startsWith('https://anime4i.com/')?Promise.reject(Error('Site unavailable')):network(u));const surviving=await broken.pageStreams(fixtures.animexin.page,{start:Date.now(),site:p.SITES[1]});
- check('one failed site leaves other results available',()=>assert(surviving.some(s=>s.name.startsWith('AnimeXin | '))));
+ check('one failed site leaves other results available',()=>assert(surviving.some(s=>s.name.startsWith('OK.ru | '))));
  const hd=await full.pageStreams(fixtures.hdonghua.page,{start:Date.now(),site:p.SITES[8]});
  check('H-Donghua resolves Dailymotion and direct video with subtitles',()=>{assert(hd.some(s=>s.name.includes('Dailymotion')));assert(hd.some(s=>s.url.includes('archive.org')&&s.subtitles.some(t=>t.language==='en')));});
  const ds=p.SITES[7],card=p.rankCards(fixtures.dongsub.search,meta,1,'tv',ds)[0];let called=false;
@@ -55,7 +55,8 @@ function load(fetch,timers={},code=source){const box={module:{exports:{}},URL,co
   check(site.name+' provider searches only its selected site',()=>{
    assert(requested.some(u=>u.startsWith(site.url+'/')), 'Selected site was never requested');
    for(const other of p.SITES.filter(s=>s.url!==site.url))assert(!requested.some(u=>u.startsWith(other.url+'/')), 'Unexpected request to '+other.name);
-   assert(results.every(s=>s.name.startsWith(site.name+' | ')), 'Foreign site result');
+   assert(results.every(s=>!p.SITES.some(other=>s.name.startsWith(other.name+' | '))), 'Redundant site name');
+   assert(results.every(s=>/^(Dailymotion|OK\.ru|Rumble|Direct) \| /.test(s.name)), 'Missing host label');
    if(['AnimeXin','Lucifer Donghua .in','Lucifer Donghua .org','AnimeKhor','Donghua World'].includes(site.name))assert(results.length>0,'Missing fixture streams');
   });
   const failedCalls=[];
