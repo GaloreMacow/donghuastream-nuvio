@@ -14,7 +14,7 @@ A plugin with separate providers for nine donghua sites. Enable only the sites y
 
 ## Installation
 
-Add this URL in Nuvio’s **Plugins** settings and enable your preferred **DonghuaStream | ...** providers:
+Add this URL in Nuvio’s **Plugins** settings and enable your preferred site providers (for example, **AnimeXin** or **Anime4i**):
 
 ```text
 https://raw.githubusercontent.com/GaloreMacow/donghuastream-nuvio/main/manifest.json
