@@ -26,7 +26,7 @@ The existing `donghuastream` provider ID now searches DonghuaStream only. The ot
 
 ## Development
 
-Run `npm ci`, `npm run build`, and `npm test`. Edit `providers/donghuastream.js`, then regenerate the other providers with `npm run build`; the tests check that the copies are current.
+Run `npm ci`, `npm run build`, and `npm test`. Edit search/player logic in `providers/donghuastream.js` or site settings in `scripts/sites.cjs`, then regenerate with `npm run build`; the tests check that all provider copies are current.
 
 Availability depends on the sites and supported video hosts. Some players and season mappings are unsupported. See [VALIDATION.md](VALIDATION.md) for testing details.
 

@@ -4,7 +4,7 @@ const fixtures=JSON.parse(fs.readFileSync(path.join(__dirname,'sites.json'),'utf
 const keys=Object.keys(fixtures),meta={name:'Renegade Immortal',alternative_titles:{results:[{title:'Xian Ni'}]},seasons:[{season_number:1,episode_count:200}]};
 let passed=0;function check(name,fn){fn();passed++;console.log('PASS '+name);}
 function response(body,url){return {ok:true,status:200,url,text:()=>Promise.resolve(typeof body==='string'?body:JSON.stringify(body))};}
-function load(fetch,timers={},code=source.replace("var SOURCE_SITE = 'donghuastream';","var SOURCE_SITE = '';")){const box={module:{exports:{}},URL,console:{warn(){},log(){}},TMDB_API_KEY:'fixture',require:()=>cheerio,fetch,...timers};vm.runInNewContext(code.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams,SITES,rankCards,chooseEpisode,mirrors,supportedMirror,pageStreams,findPage,bounded};'),box);return box.module.exports;}
+function load(fetch,timers={},code=source){const box={module:{exports:{}},URL,console:{warn(){},log(){}},TMDB_API_KEY:'fixture',require:()=>cheerio,fetch,...timers};vm.runInNewContext(code.replace('module.exports = { getStreams: getStreams };','module.exports = {getStreams,rankCards,chooseEpisode,mirrors,supportedMirror,pageStreams,findPage,bounded};'),box);box.module.exports.SITES=require('../scripts/sites.cjs');return box.module.exports;}
 (async()=>{
  const p=load(()=>Promise.reject(Error('Unexpected request')));
  keys.forEach((key,index)=>{const f=fixtures[key],site=p.SITES[index+1];
@@ -28,13 +28,14 @@ function load(fetch,timers={},code=source.replace("var SOURCE_SITE = 'donghuastr
   if(url.includes('ok.ru/videoembed/')){const data={flashvars:{metadata:JSON.stringify({videos:[{name:'full',url:'https://cdn.example/'+url.split('/').pop().split('?')[0]+'.mp4'}]})}};return Promise.resolve(response('<div data-options="'+JSON.stringify(data).replaceAll('&','&amp;').replaceAll('"','&quot;')+'"></div>',url));}
   return Promise.reject(Error('Unsupported fixture request'));
  }
- const full=load(network),streams=await full.getStreams(223911,'tv',1,162);
- check('combined lookup returns multiple sites and preserves full resolution labels',()=>{for(const key of ['AnimeXin','Lucifer Donghua .in','Lucifer Donghua .org','AnimeKhor','Donghua World'])assert(streams.some(s=>s.name.startsWith(key+' | ')),key);assert(streams.every(s=>/1080p|720p/.test(s.quality)));});
+ const full=load(network),streams=[];
+ for(const provider of require('../manifest.json').scrapers){const result=await load(network,{},fs.readFileSync(path.join(__dirname,'..',provider.filename),'utf8')).getStreams(223911,'tv',1,162);streams.push(...result);}
+ check('enabled providers return their own sites with complete resolution labels',()=>{for(const key of ['AnimeXin','Lucifer Donghua .in','Lucifer Donghua .org','AnimeKhor','Donghua World'])assert(streams.some(s=>s.name.startsWith(key+' | ')),key);assert(streams.every(s=>/1080p|720p/.test(s.quality)));});
  const a4=await full.pageStreams(fixtures.anime4i.page,{start:Date.now(),site:p.SITES[2]});
  check('Anime4i resolves its supported players',()=>assert(a4.some(s=>s.name.startsWith('Anime4i | '))));
- check('repeated shared media URLs are deduplicated',()=>assert.equal(new Set(streams.map(s=>s.url)).size,streams.length));
+ check('individual provider shared media URLs are deduplicated',()=>assert.equal(new Set(a4.map(s=>s.url)).size,a4.length));
  check('language variants remain distinct',()=>{assert(streams.some(s=>s.name.includes('AnimeXin | OK.ru | English')));assert(streams.some(s=>s.name.includes('AnimeXin | OK.ru | Indonesian')));});
- const broken=load(u=>u.startsWith('https://anime4i.com/')?Promise.reject(Error('Site unavailable')):network(u));const surviving=await broken.getStreams(223911,'tv',1,162);
+ const broken=load(u=>u.startsWith('https://anime4i.com/')?Promise.reject(Error('Site unavailable')):network(u));const surviving=await broken.pageStreams(fixtures.animexin.page,{start:Date.now(),site:p.SITES[1]});
  check('one failed site leaves other results available',()=>assert(surviving.some(s=>s.name.startsWith('AnimeXin | '))));
  const hd=await full.pageStreams(fixtures.hdonghua.page,{start:Date.now(),site:p.SITES[8]});
  check('H-Donghua resolves Dailymotion and direct video with subtitles',()=>{assert(hd.some(s=>s.name.includes('Dailymotion')));assert(hd.some(s=>s.url.includes('archive.org')&&s.subtitles.some(t=>t.language==='en')));});
