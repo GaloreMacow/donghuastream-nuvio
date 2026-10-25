@@ -2,16 +2,18 @@
 (function () {
   'use strict';
   var SITE = 'https://donghuastream.org';
+  // Each distributed provider searches only its selected site.
+  var SOURCE_SITE = 'donghuastream';
   var SITES = [
-    { name: 'DonghuaStream', url: SITE },
-    { name: 'AnimeXin', url: 'https://animexin.dev' },
-    { name: 'Anime4i', url: 'https://anime4i.com' },
-    { name: 'Lucifer Donghua .in', url: 'https://luciferdonghua.in' },
-    { name: 'Lucifer Donghua .org', url: 'https://luciferdonghua.org' },
-    { name: 'AnimeKhor', url: 'https://animekhor.org' },
-    { name: 'Donghua World', url: 'https://donghuaworld.com' },
-    { name: 'DongSub', url: 'https://dongsub.org', layout: 'dongsub' },
-    { name: 'H-Donghua', url: 'https://h-donghua.com', layout: 'hd' }
+    { id: 'donghuastream', name: 'DonghuaStream', url: SITE },
+    { id: 'animexin', name: 'AnimeXin', url: 'https://animexin.dev' },
+    { id: 'anime4i', name: 'Anime4i', url: 'https://anime4i.com' },
+    { id: 'lucifer-in', name: 'Lucifer Donghua .in', url: 'https://luciferdonghua.in' },
+    { id: 'lucifer-org', name: 'Lucifer Donghua .org', url: 'https://luciferdonghua.org' },
+    { id: 'animekhor', name: 'AnimeKhor', url: 'https://animekhor.org' },
+    { id: 'donghuaworld', name: 'Donghua World', url: 'https://donghuaworld.com' },
+    { id: 'dongsub', name: 'DongSub', url: 'https://dongsub.org', layout: 'dongsub' },
+    { id: 'h-donghua', name: 'H-Donghua', url: 'https://h-donghua.com', layout: 'hd' }
   ];
   function siteURL(ctx) { return ctx && ctx.site ? ctx.site.url : SITE; }
   var UA = 'Mozilla/5.0';
@@ -592,7 +594,9 @@
     }
     var work = metadata(id, type, ctx).then(function (meta) {
       if (!meta || !aliases(meta).length) return [];
-      return Promise.all(SITES.map(function (site) {
+      return Promise.all(SITES.filter(function (site) {
+        return !SOURCE_SITE || site.id === SOURCE_SITE;
+      }).map(function (site) {
         var child = { start: ctx.start, site: site };
         return search(meta, season, type, child).then(function (cards) {
           return findPage(cards, meta, type, season, episode, child);
@@ -607,3 +611,4 @@
   }
   module.exports = { getStreams: getStreams };
 }());
+
