@@ -6,7 +6,7 @@
   "scrapers": [
     {
       "id": "donghuastream",
-      "name": "DonghuaStream | DonghuaStream",
+      "name": "DonghuaStream",
       "version": "1.2.0",
       "description": "Search DonghuaStream only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream.js",
@@ -29,7 +29,7 @@
     },
     {
       "id": "donghuastream-animexin",
-      "name": "DonghuaStream | AnimeXin",
+      "name": "AnimeXin",
       "version": "1.2.0",
       "description": "Search AnimeXin only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-animexin.js",
@@ -52,7 +52,7 @@
     },
     {
       "id": "donghuastream-anime4i",
-      "name": "DonghuaStream | Anime4i",
+      "name": "Anime4i",
       "version": "1.2.0",
       "description": "Search Anime4i only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-anime4i.js",
@@ -75,7 +75,7 @@
     },
     {
       "id": "donghuastream-lucifer-in",
-      "name": "DonghuaStream | Lucifer Donghua .in",
+      "name": "Lucifer Donghua .in",
       "version": "1.2.0",
       "description": "Search Lucifer Donghua .in only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-lucifer-in.js",
@@ -98,7 +98,7 @@
     },
     {
       "id": "donghuastream-lucifer-org",
-      "name": "DonghuaStream | Lucifer Donghua .org",
+      "name": "Lucifer Donghua .org",
       "version": "1.2.0",
       "description": "Search Lucifer Donghua .org only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-lucifer-org.js",
@@ -121,7 +121,7 @@
     },
     {
       "id": "donghuastream-animekhor",
-      "name": "DonghuaStream | AnimeKhor",
+      "name": "AnimeKhor",
       "version": "1.2.0",
       "description": "Search AnimeKhor only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-animekhor.js",
@@ -144,7 +144,7 @@
     },
     {
       "id": "donghuastream-donghuaworld",
-      "name": "DonghuaStream | Donghua World",
+      "name": "Donghua World",
       "version": "1.2.0",
       "description": "Search Donghua World only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-donghuaworld.js",
@@ -167,7 +167,7 @@
     },
     {
       "id": "donghuastream-dongsub",
-      "name": "DonghuaStream | DongSub",
+      "name": "DongSub",
       "version": "1.2.0",
       "description": "Search DongSub only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-dongsub.js",
@@ -190,7 +190,7 @@
     },
     {
       "id": "donghuastream-h-donghua",
-      "name": "DonghuaStream | H-Donghua",
+      "name": "H-Donghua",
       "version": "1.2.0",
       "description": "Search H-Donghua only, with available stream qualities and subtitles.",
       "filename": "providers/donghuastream-h-donghua.js",
