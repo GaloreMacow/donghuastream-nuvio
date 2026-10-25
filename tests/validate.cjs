@@ -33,7 +33,7 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
 
 (async()=>{
   check('manifest paths, IDs and versions',()=>{
-    assert.equal(manifest.version,'1.1.0');assert.equal(manifest.scrapers.length,1);
+    assert.equal(manifest.version,'1.2.0');assert.equal(manifest.scrapers.length,9);
     const ids=new Set();for(const s of manifest.scrapers){assert(!ids.has(s.id));ids.add(s.id);assert(fs.existsSync(path.join(root,s.filename.split("?")[0])));assert.equal(s.version,manifest.version);assert.deepEqual(s.supportedTypes,['movie','tv']);}
   });
   check('ES5 syntax and no Node/browser/eval dependencies',()=>{
@@ -229,3 +229,4 @@ const p=load(()=>Promise.reject(Error('Network not expected')));
   }finally{context.dispose();runtime.dispose();}
   console.log(`\n${passed} checks passed. Live hosts and TV playback need separate testing.`);
 })().catch(e=>{console.error(e.stack);process.exitCode=1;});
+
